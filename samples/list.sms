@@ -1,0 +1,37 @@
+class('java.lang.String':
+  def('+' | other:
+    concat(other)
+  )
+)
+
+class('java.lang.Integer':
+  def('!=' | other:
+    if(this.equals(other): 1: 0)
+  )
+)
+
+class(Cons | element, next:
+  def(isEmpty:
+    1 + @next.isEmpty()
+  )
+  def(filter | predicate:
+    n = @next.filter(predicate)
+    if(predicate(@element):
+      Cons(@element, n):
+      n)
+  )
+  def(str:
+    'java.lang.Integer'.toString(@element) + @next.str()
+  )
+)
+
+class(Nil:
+  def(isEmpty: 0)
+  def(filter | predicate: this)
+  def(str: '')
+)
+nil = Nil()
+cons = Cons
+
+list = cons(1, cons(2, cons(3, nil)))
+list.filter((element: element != 2)).str()

@@ -1,0 +1,6 @@
+'java.math.BigInteger'.def('+' | other :
+  this.add(other)
+) 
+
+a = 10000000000000000000
+(x : a + x)(10000000000000000000)

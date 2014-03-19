@@ -1,0 +1,13 @@
+class(Book | author, title:
+  def(str:
+    title().concat(': ').concat(author())
+  )
+  
+  def(str2:
+    @title.concat(': ').concat(@author)
+  )
+)
+
+book = Book('Dan Brown', 'Da Vinci Code')
+//book.str()
+book.str2()

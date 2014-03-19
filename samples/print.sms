@@ -1,0 +1,8 @@
+class('com.github.forax.smartass.rt.Script':
+  def(println | value:
+    'java.lang.System'.out().println(value)
+  )
+)
+
+println('hello smartass')
+''

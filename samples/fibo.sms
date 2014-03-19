@@ -1,0 +1,32 @@
+class('com.github.forax.smartass.rt.Script':
+  def(def | name, block:
+    'com.github.forax.smartass.rt.Script'.def(name, block)
+  )
+)
+
+class('java.lang.Integer':
+  def('!':
+    if(this: 0: 1)
+  )
+  def('-@':
+    'java.lang.Math'.negateExact(this)
+  )
+  def('==' | other:
+    !this.compareTo(other)
+  )
+  def('<' | other:
+    'java.lang.Integer'.signum('java.lang.Integer'.compare(this, other)) == -1
+  )
+  def('+' | other:
+    'java.lang.Math'.addExact(this, other)
+  )
+  def('-' | other:
+    'java.lang.Math'.subtractExact(this, other)
+  )
+)
+
+def(fibo | x:
+  if(x < 2: 1: fibo(x - 1) + fibo(x - 2))
+)
+
+fibo(32)

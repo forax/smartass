@@ -1,0 +1,134 @@
+directives:
+  autoalias
+
+imports:
+  java.util.List
+  com.github.forax.smartass.ast.Block
+  com.github.forax.smartass.ast.Expr
+  com.github.forax.smartass.ast.Lambda
+  com.github.forax.smartass.ast.Location
+  com.github.forax.smartass.ast.Token
+  
+priorities:
+ dot = 8 left
+ parens = 7 left
+ unary = 6 left
+ star = 5 left
+ plus = 4 left
+ eq = 3 left
+ lambda = 2 right
+ assign = 1 right
+
+tokens:
+  plus= '\+'                   [plus]
+  minus= '-'                   [plus]
+  star = '\*'                  [star]
+  slash = '\/'                 [star]
+  mod = '%'                    [star]
+  assign= '='                  [assign]
+  eq = '=='                    [eq]
+  ne = '!='                    [eq]
+  lt= '<'                      [eq]
+  le = '<='                    [eq]
+  gt = '>'                     [eq]
+  ge = '>='                    [eq]
+  dot = '\.'                   [dot]
+  bang = '!' 
+  pipe = '\|'      
+  at = '@'    
+  colon= ':'
+  comma=','
+  semicolon = ';'
+  eol = '\n'
+  lpar = '\('                  [parens]
+  rpar = '\)' 
+  lopt = '\['
+  ropt = '\]'
+  lcurl = '\{'
+  rcurl = '\}'
+  _while = 'while'
+  _if = 'if'
+  
+  id = "([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*"
+  text = "'([^'])*'"
+  value = "[0-9]+(\.[0-9]*)?"
+ 
+blanks:
+ space = "( |\t|\r|\n)"
+
+comments:
+ comment = "\/\/([^\r\n])*(\r)?\n"
+ 
+types:
+ 'id': Token<String>
+ 'text': Token<String>
+ 'value': Token<String>
+ 'lopt': Location
+ 'lcurl': Location
+ 'pipe': Location
+ 'colon': Location
+ 
+ name: Token<String>
+ expr: Expr
+ instrs: List<Expr>
+ block: List<Expr>
+ block_param: Lambda
+
+starts:
+  script
+
+productions:
+ script = instrs?  { script }
+        ;
+  
+ eoi = 'eol'   { eoi_eol }
+     | ';'     { eoi_semi }
+     ;
+       
+ instrs = expr eoi instrs   { instrs_rec }
+        | expr eoi          { instrs_expr_eoi }
+        | expr              { instrs_expr }
+        ;
+  
+ block = instrs?      { block }
+       ;
+  
+ block_param = ':' block                       { block_param_block }
+             | '|' 'id'/'comma'* ':' block     { block_param_lambda }
+             ;
+  
+ name = 'id'       { name_id }
+      | 'text'     { name_text }
+      ;
+ 
+ expr = 'value'                                               { expr_value }
+      | '(' expr ')'                                          { expr_parens }
+      | name                                                  { expr_var_access }  
+      | 'id' '=' expr                          [assign]       { expr_var_assignment }
+      
+      | '@' 'id'                                              { expr_field_access }
+      | '(' ':' block ')'                                     { expr_block }
+      | '(' 'id'/'comma'+ ':' block ')'                       { expr_lambda }
+      
+      | expr '(' expr/'comma'* block_param? ')'               { expr_funcall }
+      | expr '.' name '(' expr/'comma'* block_param? ')'      { expr_mthcall }
+      
+      | 'while' '(' expr ':' block ')'                        { expr_while }
+      | 'if' '(' expr ':' block ')'                           { expr_if }
+      | 'if' '(' expr ':' block ':' block')'                  { expr_ifelse }
+      
+      | '!' expr                               [unary]        { expr_unary_not }
+      | '-' expr                               [unary]        { expr_unary_neg }
+      | expr '+' expr                          [plus]         { expr_binary_add }
+      | expr '-' expr                          [plus]         { expr_binary_sub }
+      | expr '*' expr                          [star]         { expr_binary_mul }
+      | expr '/' expr                          [star]         { expr_binary_div }
+      | expr '%' expr                          [star]         { expr_binary_mod }
+      | expr '==' expr                         [eq]           { expr_binary_eq }
+      | expr '!=' expr                         [eq]           { expr_binary_ne }
+      | expr '<' expr                          [eq]           { expr_binary_lt }
+      | expr '<=' expr                         [eq]           { expr_binary_le }
+      | expr '>' expr                          [eq]           { expr_binary_gt }
+      | expr '>=' expr                         [eq]           { expr_binary_ge }
+      ;
+   
