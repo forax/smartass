@@ -120,9 +120,9 @@ class JavaBridge {
         int index = indexes[i];
         Class<?> methodParameterType = parameters[index][parameterIndex];
         
-        //System.out.println("subtype: " + type + ' ' + methodParameterType + ": " + isSubTypeOf(type, methodParameterType));
+        //System.out.println("type check: " + type + ' ' + methodParameterType + ": " + isSubTypeOf(type, methodParameterType));
         
-        if (isSubTypeOf(type, methodParameterType)) {
+        if (type == methodParameterType) {
           i++;
           continue;
         }
@@ -202,28 +202,6 @@ class JavaBridge {
       return 1;
     }
     return type1.getName().compareTo(type2.getName());  // make it stable
-  }
-  
-  private static boolean isSubTypeOf(Class<?> type1, Class<?> type2) {
-    if (type1 == type2) {
-      return true;
-    }
-    if (type1 == Object.class) {
-      return true;
-    }
-    if (type1 == boolean.class || type2 == boolean.class) {
-      return false;
-    }
-    
-    if (type1.isPrimitive()) {
-      if (!type2.isPrimitive()) {
-        return false;
-      }
-      int ordinal1 = ordinalType(type1);
-      int ordinal2 = ordinalType(type2);
-      return ordinal1 <= ordinal2;
-    }
-    return type1.isAssignableFrom(type2);
   }
   
   private static int ordinalType(Class<?> type) {
