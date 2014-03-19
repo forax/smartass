@@ -164,18 +164,18 @@ public class Script {
   }
   
   @MethodInfo(hidden=true)
-  public static CallSite bsm_symbol(Lookup lookup, String mangledSymbol, @SuppressWarnings("unused")MethodType mtype) {
+  public static CallSite bsm_symbol(Lookup lookup, @SuppressWarnings("unused")String name, @SuppressWarnings("unused")MethodType mtype, int constantIndex) {
     ScriptClassLoader classLoader = (ScriptClassLoader)lookup.lookupClass().getClassLoader();
     Script script = classLoader.getScript();
     
-    String symbol = Utils.unmangle(mangledSymbol);
+    String symbol = (String)script.dictionnary.getConstantAt(constantIndex);
     Object constant = symbol;
     
     Klass klass = script.klassCache.get(symbol);
     if (klass != null) {  // known klass ?
       constant = klass;
     } else {
-      if (symbol.contains(".")) { // a Java class ?
+      if (symbol.indexOf('.') != -1) { // a Java class ?
         try {
           Class<?> type = classLoader.loadClass(symbol);
           constant = script.klasses.get(type);

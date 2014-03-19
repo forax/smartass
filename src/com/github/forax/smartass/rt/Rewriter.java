@@ -86,7 +86,7 @@ public class Rewriter {
       mv.visitInvokeDynamicInsn(name, desc,
           new Handle(H_INVOKESTATIC, INTERNAL_NAME, bsmName, BSM_SIG));
     }
-    public void emitIndy(String bsmName, String name, String desc, Function constObject) {
+    public void emitIndy(String bsmName, String name, String desc, Object constObject) {
       mv.visitInvokeDynamicInsn(name, desc,
           new Handle(H_INVOKESTATIC, INTERNAL_NAME, bsmName, BSM_INT_SIG),
           dictionnary.intern(constObject));
@@ -133,7 +133,7 @@ public class Rewriter {
             Integer slotOrNull = env.lookupSlotOrNull(name);
             if (slotOrNull == null) {   // unknown local variable, so it's a symbol
               // may be the symbol can be different depending on 'this' ??
-              env.emitIndy("bsm_symbol", Utils.mangle(name), "()Ljava/lang/Object;");
+              env.emitIndy("bsm_symbol", "symbol", "()Ljava/lang/Object;", name);
             } else {
               env.emitVar(ALOAD, slotOrNull);
             }
