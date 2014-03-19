@@ -1,3 +1,4 @@
+package com.github.forax.smartass;
 import com.github.forax.smartass.ast.ASTBuilder;
 import com.github.forax.smartass.ast.Block;
 import com.github.forax.smartass.rt.Script;

@@ -1,50 +1,41 @@
 <?xml version="1.0"?>
 <project name="smartass" default="all" basedir=".">
 	
-  <property name="tatoo.dir" location="build-lib"/>
-  <property name="tatoo.jar" location="${tatoo.dir}/tatoo.jar"/>
-	<property name="lib.dir" location="lib"/>
-	<property name="tatoo-runtime.jar" location="${lib.dir}/tatoo-runtime.jar"/>
+  <property name="lib.dir" location="lib"/>
+  <property name="tatoo-runtime.jar" location="${lib.dir}/tatoo-runtime.jar"/>
+	<property name="asm.jar" location="${lib.dir}/asm-debug-all-5.0_BETA.jar"/>
 	
-  <property name="src" value="src"/>
-  <property name="classes" value="classes"/>
-  <property name="gen-src" value="gen-src"/>
-  <property name="ebnf.file" value="smartass.ebnf"/>
-  	
-  <property name="lexer.package" value="com.github.forax.smartass.grammar.lexer"/>
-  <property name="parser.package" value="com.github.forax.smartass.grammar.parser"/>
-  <property name="tools.package" value="com.github.forax.smartass.grammar.tools"/>
-  
-  <target name="tasks">
-    <taskdef name="ebnf" classname="fr.umlv.tatoo.cc.ebnf.main.EBNFTask" classpath="${tatoo.jar}"/>
-  </target>
-  	
-  <target name="gen" depends="tasks">
-	<ebnf destination="${gen-src}" ebnfFile="${ebnf.file}"  parserType="lalr"
-	      logfile="log.html" loglevel="ALL">
-		<package lexer="${lexer.package}"/>
-		<package parser="${parser.package}"/>
-		<package tools="${tools.package}"/>
-	</ebnf>
-  </target>
-	
-  <target name="all" depends="gen">
+	<property name="src" value="src"/>
+  <property name="gen-src" value="grammar/gen-src"/>
+	<property name="classes" value="classes"/>
+	<property name="smartass.jar" value="smartass.jar"/>
+
+  <target name="all" depends="jar">
   </target>
 	
 	<target name="compile">
-		<mkdir dir="${classes}"/>
-		<javac srcdir="${src}:${gen-src}"
-           destdir="${classes}"
-           classpath="${tatoo-runtime.jar}"
-			     includeantruntime="false"
-           debug="on"
-	  />
+	    <mkdir dir="${classes}"/>
+	    <javac srcdir="${src}:${gen-src}"
+	           destdir="${classes}"
+	           classpath="${tatoo-runtime.jar}:${asm.jar}"
+	           includeantruntime="false"
+	           debug="on"
+	    />
 	</target>
+	
+  <target name="jar" depends="compile">
+      <jar basedir="${classes}" destfile="${smartass.jar}">
+      	<manifest>
+      		<attribute name="Main-Class" value="com.github.forax.smartass.Main"/>
+      		<attribute name="Class-Path" value="lib/tatoo-runtime.jar lib/asm-debug-all-5.0_BETA.jar"/>
+      	</manifest>
+      </jar>
+  </target>
 	
 	<target name="clean">
 		<delete dir="${classes}"/>
-		<delete dir="${gen-src}"/>
 		<!-- not to break eclipse source folders -->
+		<mkdir dir="${src}"/>
 		<mkdir dir="${gen-src}"/>
 	</target>
 
