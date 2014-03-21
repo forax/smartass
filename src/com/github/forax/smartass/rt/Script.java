@@ -3,6 +3,7 @@ package com.github.forax.smartass.rt;
 import static org.objectweb.asm.Opcodes.*;
 
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -11,6 +12,8 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,6 +29,7 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.util.CheckClassAdapter;
 
+import com.github.forax.smartass.ast.ASTBuilder;
 import com.github.forax.smartass.ast.Block;
 
 public class Script {
@@ -304,12 +308,6 @@ public class Script {
     return false;
   }
   
-  @MethodInfo(hidden=true)
-  public Object start(Block block) throws Throwable {
-    Function main = new Function(Collections.emptyList(), Collections.emptyList(), block);
-    return main.getTarget(this).invokeExact((Object)this);
-  }
-  
   
   // ---------------------------
   // public API !
@@ -355,5 +353,18 @@ public class Script {
         null,
         (script, fun) -> METHOD_CALL.bindTo(this).asCollector(Object[].class, parameterCount)
         );
+  }
+  
+  public Object eval(Block block) throws Throwable {
+    Function main = new Function(Collections.emptyList(), Collections.emptyList(), block);
+    return main.getTarget(this).invokeExact((Object)this);
+  }
+  
+  public Object require(String filename) throws Throwable {
+    Block block;
+    try(Reader reader = Files.newBufferedReader(Paths.get(filename))) {
+      block = ASTBuilder.parseBlock(reader);
+    }
+    return eval(block);
   }
 }

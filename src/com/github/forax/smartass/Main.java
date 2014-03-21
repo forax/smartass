@@ -1,22 +1,24 @@
 package com.github.forax.smartass;
+
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import com.github.forax.smartass.ast.ASTBuilder;
 import com.github.forax.smartass.ast.Block;
 import com.github.forax.smartass.rt.Script;
 
-
 public class Main {
   public static void main(String[] args) throws Throwable {
-    java.io.Reader reader;
-    if (args.length>0) {
-      reader = new java.io.FileReader(args[0]);
-    } else {
-      reader = new java.io.InputStreamReader(System.in);
+    Block block;
+    try(Reader reader = (args.length>0)?
+          Files.newBufferedReader(Paths.get(args[0])):
+          new java.io.InputStreamReader(System.in)) {
+      block = ASTBuilder.parseBlock(reader);
     }
 
-    Block block = ASTBuilder.parseBlock(reader);
-
     Script script = new Script();
-    Object result = script.start(block);
+    Object result = script.eval(block);
     System.out.println(result);
   }
 }
