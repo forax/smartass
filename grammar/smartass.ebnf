@@ -48,10 +48,12 @@ tokens:
   rcurl = '\}'
   _while = 'while'
   _if = 'if'
+  _return = 'return'
+  _throw = 'throw'
   
+  value = "([0-9]+(\.[0-9]+)?)|true|false"
   id = "([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*"
   text = "'([^'])*'"
-  value = "[0-9]+(\.[0-9]*)?"
  
 blanks:
  space = "( |\t|\r|\n)"
@@ -70,6 +72,7 @@ types:
  
  name: Token<String>
  expr: Expr
+ instr: Expr
  instrs: List<Expr>
  block: List<Expr>
  block_param: Lambda
@@ -85,10 +88,15 @@ productions:
      | ';'     { eoi_semi }
      ;
        
- instrs = expr eoi instrs   { instrs_rec }
-        | expr eoi          { instrs_expr_eoi }
-        | expr              { instrs_expr }
+ instrs = instr eoi instrs   { instrs_rec }
+        | instr eoi          { instrs_instr_eoi }
+        | instr              { instrs_instr }
         ;
+        
+ instr = expr                { instr_expr }
+       | 'return' expr       { instr_return }
+       | 'throw' expr        { instr_throw }
+       ;
   
  block = instrs?      { block }
        ;

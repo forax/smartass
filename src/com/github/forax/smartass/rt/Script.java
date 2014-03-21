@@ -195,21 +195,30 @@ public class Script {
   @MethodInfo(hidden=true)
   public static CallSite bsm_const(@SuppressWarnings("unused") Lookup lookup,  String name, @SuppressWarnings("unused") MethodType type) {
     Object constant;
-    if (name.indexOf('.') == -1) {
-      try {
-        constant = Integer.parseInt(name);
-      } catch(NumberFormatException e) {
+    switch(name) {
+    case "true":
+      constant = true;
+      break;
+    case "false":
+      constant = false;
+      break;
+    default:
+      if (name.indexOf('.') == -1) {
         try {
-          constant = Long.parseLong(name);
-        } catch(NumberFormatException e2) {
-          constant = new BigInteger(name);
-        } 
-      }
-    } else {
-      try {
-        constant = Double.parseDouble(name);
-      } catch(NumberFormatException e) {
-        constant = new BigDecimal(name);
+          constant = Integer.parseInt(name);
+        } catch(NumberFormatException e) {
+          try {
+            constant = Long.parseLong(name);
+          } catch(NumberFormatException e2) {
+            constant = new BigInteger(name);
+          } 
+        }
+      } else {
+        try {
+          constant = Double.parseDouble(name);
+        } catch(NumberFormatException e) {
+          constant = new BigDecimal(name);
+        }
       }
     }
     return new ConstantCallSite(MethodHandles.constant(Object.class, constant));
@@ -265,20 +274,28 @@ public class Script {
   
   @SuppressWarnings("unused")  // called from a method handle
   private Object method_call(Object selector, Object[] args) throws Throwable {
+    MethodHandle mh;
     if (selector instanceof Function) {
-      return ((Function)selector).getTarget(this).invokeWithArguments(args);
-    }
-    if (selector instanceof Klass) {
-      return ((Klass)selector).getTarget(this).invokeWithArguments(args);
-    }
-    if (selector instanceof String) {
-      Function method = getKlass(args[0]).getMethodMap().get(selector);
-      if (method == null) {
-        throw new LinkageError("no method '" + selector + "' defined on " + getKlass(args[0]));
+      mh = ((Function)selector).getTarget(this);
+    } else {
+      if (selector instanceof Klass) {
+        mh = ((Klass)selector).getTarget(this);
+      } else {
+        if (selector instanceof String) {
+          Function method = getKlass(args[0]).getMethodMap().get(selector);
+          if (method == null) {
+            throw new LinkageError("no method '" + selector + "' defined on " + getKlass(args[0]));
+          }
+          mh = method.getTarget(this);
+        } else {
+          throw new LinkageError("invalid selector " + selector);
+        }
       }
-      return method.getTarget(this).invokeWithArguments(args);
     }
-    throw new LinkageError("invalid selector " + selector);
+    if (args.length != mh.type().parameterCount()) {
+      throw new LinkageError("wrong number of arguments(" + args.length + ") to call " + selector);
+    }
+    return mh.invokeWithArguments(args);
   }
   
   private static final MethodHandle TRUTH = findStatic(Script.class, "truth", boolean.class, Object.class);
@@ -306,6 +323,18 @@ public class Script {
       return ((BigInteger)value).equals(BigInteger.ZERO);
     }
     return false;
+  }
+  
+  private static final MethodHandle AS_THROWABLE = findStatic(Script.class, "asThrowable", Throwable.class, Object.class);
+  
+  @MethodInfo(hidden=true)
+  public static CallSite bsm_throwable(@SuppressWarnings("unused") Lookup lookup, @SuppressWarnings("unused") String name, @SuppressWarnings("unused") MethodType type) {
+    return new ConstantCallSite(AS_THROWABLE);
+  }
+  
+  @SuppressWarnings("unused")  // called from a method handle
+  private static Throwable asThrowable(Object value) {
+    return new Error(value.toString());
   }
   
   

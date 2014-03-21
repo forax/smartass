@@ -29,11 +29,6 @@ public class Klass {
     return new Klass(name, staticKlass, fieldMap);
   }
   
-  @Override
-  public String toString() {
-    return name  + '/' + getClass().getName() + '@' + hashCode();
-  }
-  
   MethodHandle getTarget(Script script) {
     if (target != null) {
       return target;

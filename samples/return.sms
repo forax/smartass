@@ -1,0 +1,29 @@
+class('java.lang.Integer':
+  def('+' | other:
+    'java.lang.Math'.addExact(this, other)
+  )
+  def('-' | other:
+    'java.lang.Math'.subtractExact(this, other)
+  )
+  def('<' | other:
+    'java.lang.Integer'.signum(this.compareTo(other)) == -1
+  )
+  def('-@':
+    'java.lang.Math'.negateExact(this)
+  )
+  def('==' | other:
+    this.equals(other)
+  )
+)
+
+class(Fib:
+  def(fib| n:
+    if(n<2:
+      return 1
+    )
+    fib(n - 1) + fib(n - 2)
+  )
+)
+
+Fib().fib(7)
+

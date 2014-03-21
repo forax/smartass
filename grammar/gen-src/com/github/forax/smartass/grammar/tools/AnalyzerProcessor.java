@@ -170,6 +170,18 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                  case _if: {
                        return;
            }
+                 case _return: {
+                       return;
+           }
+                 case _throw: {
+                       return;
+           }
+                 case value: {
+         data=dataViewer.view(buffer);
+                                  com.github.forax.smartass.ast.Token<String> value=terminalEvaluator.value(data);
+                                      stack.push_Object(value);
+                                 return;
+           }
                  case id: {
          data=dataViewer.view(buffer);
                                   com.github.forax.smartass.ast.Token<String> id=terminalEvaluator.id(data);
@@ -180,12 +192,6 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
          data=dataViewer.view(buffer);
                                   com.github.forax.smartass.ast.Token<String> text=terminalEvaluator.text(data);
                                       stack.push_Object(text);
-                                 return;
-           }
-                 case value: {
-         data=dataViewer.view(buffer);
-                                  com.github.forax.smartass.ast.Token<String> value=terminalEvaluator.value(data);
-                                      stack.push_Object(value);
                                  return;
            }
                  case __eof__: {
@@ -223,20 +229,38 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           return;
                     case instrs_rec: { // not synthetic
                                  List<Expr> instrs=(List<Expr>)stack.pop_Object();
-                                          Expr expr=(Expr)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.instrs_rec(expr,instrs));
+                                          Expr instr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.instrs_rec(instr,instrs));
                       
           }
           return;
-                    case instrs_expr_eoi: { // not synthetic
-                                 Expr expr=(Expr)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.instrs_expr_eoi(expr));
+                    case instrs_instr_eoi: { // not synthetic
+                                 Expr instr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.instrs_instr_eoi(instr));
                       
           }
           return;
-                    case instrs_expr: { // not synthetic
+                    case instrs_instr: { // not synthetic
+                                 Expr instr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.instrs_instr(instr));
+                      
+          }
+          return;
+                    case instr_expr: { // not synthetic
                                  Expr expr=(Expr)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.instrs_expr(expr));
+                                                stack.push_Object(grammarEvaluator.instr_expr(expr));
+                      
+          }
+          return;
+                    case instr_return: { // not synthetic
+                                 Expr expr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.instr_return(expr));
+                      
+          }
+          return;
+                    case instr_throw: { // not synthetic
+                                 Expr expr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.instr_throw(expr));
                       
           }
           return;
@@ -673,13 +697,19 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                          case _if:
               
               return;
+                         case _return:
+              
+              return;
+                         case _throw:
+              
+              return;
+                         case value:
+              stack.pop_Object();
+              return;
                          case id:
               stack.pop_Object();
               return;
                          case text:
-              stack.pop_Object();
-              return;
-                         case value:
               stack.pop_Object();
               return;
                          case __eof__:
@@ -697,6 +727,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
               
               return;
                          case instrs:
+              stack.pop_Object();
+              return;
+                         case instr:
               stack.pop_Object();
               return;
                          case block:

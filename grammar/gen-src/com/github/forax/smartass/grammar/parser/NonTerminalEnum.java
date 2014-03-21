@@ -7,6 +7,7 @@ public enum NonTerminalEnum {
   script,
 eoi,
 instrs,
+instr,
 block,
 block_param,
 name,

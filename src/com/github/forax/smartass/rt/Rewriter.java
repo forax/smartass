@@ -24,6 +24,7 @@ import com.github.forax.smartass.ast.If;
 import com.github.forax.smartass.ast.Lambda;
 import com.github.forax.smartass.ast.Literal;
 import com.github.forax.smartass.ast.MethodCall;
+import com.github.forax.smartass.ast.Stop;
 import com.github.forax.smartass.ast.VarAccess;
 import com.github.forax.smartass.ast.VarAssignment;
 import com.github.forax.smartass.ast.VoidVisitor;
@@ -208,6 +209,18 @@ public class Rewriter {
             }
             env.emitLabel(end);
           })
+          .when(Stop.class, (stop, env) -> {
+            visit(stop.getExpr(), env);
+            switch(stop.getKind()) {
+            case RETURN:
+              env.emitInsn(ARETURN);
+              break;
+            default: //case THROW:
+              env.emitIndy("bsm_throwable", "as_throwable", "(Ljava/lang/Object;)Ljava/lang/Throwable;");
+              env.emitInsn(ATHROW);
+            }
+            env.emitInsn(ACONST_NULL);  // dead code, but not a big deal
+          })
           ;
   
   static class VarEnv {
@@ -284,6 +297,9 @@ public class Rewriter {
             if (falseBlock != null) {
               visitFreeVar(falseBlock, env.newEnv());
             }
+          })
+          .when(Stop.class, (stop, env) -> {
+            visitFreeVar(stop.getExpr(), env);
           })
           ;
   

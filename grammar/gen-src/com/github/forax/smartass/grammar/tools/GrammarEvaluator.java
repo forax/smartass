@@ -17,19 +17,34 @@ public interface GrammarEvaluator {
   public void script(List<Expr> instrs_optional);
   /** This methods is called after the reduction of the non terminal instrs
    *  by the grammar production instrs_rec.
-   *  <code>instrs ::= expr eoi instrs</code>
+   *  <code>instrs ::= instr eoi instrs</code>
    */
-  public List<Expr> instrs_rec(Expr expr,List<Expr> instrs);
+  public List<Expr> instrs_rec(Expr instr,List<Expr> instrs);
   /** This methods is called after the reduction of the non terminal instrs
-   *  by the grammar production instrs_expr_eoi.
-   *  <code>instrs ::= expr eoi</code>
+   *  by the grammar production instrs_instr_eoi.
+   *  <code>instrs ::= instr eoi</code>
    */
-  public List<Expr> instrs_expr_eoi(Expr expr);
+  public List<Expr> instrs_instr_eoi(Expr instr);
   /** This methods is called after the reduction of the non terminal instrs
-   *  by the grammar production instrs_expr.
-   *  <code>instrs ::= expr</code>
+   *  by the grammar production instrs_instr.
+   *  <code>instrs ::= instr</code>
    */
-  public List<Expr> instrs_expr(Expr expr);
+  public List<Expr> instrs_instr(Expr instr);
+  /** This methods is called after the reduction of the non terminal instr
+   *  by the grammar production instr_expr.
+   *  <code>instr ::= expr</code>
+   */
+  public Expr instr_expr(Expr expr);
+  /** This methods is called after the reduction of the non terminal instr
+   *  by the grammar production instr_return.
+   *  <code>instr ::= _return expr</code>
+   */
+  public Expr instr_return(Expr expr);
+  /** This methods is called after the reduction of the non terminal instr
+   *  by the grammar production instr_throw.
+   *  <code>instr ::= _throw expr</code>
+   */
+  public Expr instr_throw(Expr expr);
   /** This methods is called after the reduction of the non terminal block
    *  by the grammar production block.
    *  <code>block ::= instrs_optional_1</code>

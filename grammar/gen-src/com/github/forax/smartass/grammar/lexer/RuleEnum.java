@@ -32,9 +32,11 @@ lcurl,
 rcurl,
 _while,
 _if,
+_return,
+_throw,
+value,
 id,
 text,
-value,
 space,
 comment;
 }

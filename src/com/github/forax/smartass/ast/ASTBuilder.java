@@ -95,16 +95,29 @@ public class ASTBuilder implements GrammarEvaluator {
     return instrs;
   }
   @Override
-  public List<Expr> instrs_expr_eoi(Expr expr) {
+  public List<Expr> instrs_instr_eoi(Expr expr) {
     LinkedList<Expr> exprs = new LinkedList<>();
     exprs.add(expr);
     return exprs;
   }
   @Override
-  public List<Expr> instrs_expr(Expr expr) {
-    return instrs_expr_eoi(expr);
+  public List<Expr> instrs_instr(Expr expr) {
+    return instrs_instr_eoi(expr);
   }
 
+  @Override
+  public Expr instr_expr(Expr expr) {
+    return expr;
+  }
+  @Override
+  public Expr instr_return(Expr expr) {
+    return new Stop(Stop.Kind.RETURN, expr, expr.getLocation());
+  }
+  @Override
+  public Expr instr_throw(Expr expr) {
+    return new Stop(Stop.Kind.THROW, expr, expr.getLocation());
+  }
+  
   @Override
   public Token<String> name_id(Token<String> id) {
     return id;
