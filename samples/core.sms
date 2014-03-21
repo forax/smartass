@@ -1,5 +1,70 @@
-class(A:
-  def(add | x, y:
-    x + y
+class('com.github.forax.smartass.rt.Script':
+  def(assert | block:
+    if(block() == false:
+      throw 'bad assertion'
+    )
+    true
+  )
+  def(def | name, block:
+    'com.github.forax.smartass.rt.Script'.def(name, block)
+  )
+  def(print | value:
+    'java.lang.System'.out().println(value)
+  )
+)
+
+equals_mixin = (:
+  def('==' | other: this.equals(other))
+  def('!=' | other: !(this == other))
+)
+
+compare_mixin = (:
+  def('<' | other: 'java.lang.Integer'.signum(compareTo(other)) == -1)
+  def('<=' | other: 'java.lang.Integer'.signum(compareTo(other)) != 1)
+  def('>' | other: 'java.lang.Integer'.signum(compareTo(other)) == 1)
+  def('>=' | other: 'java.lang.Integer'.signum(compareTo(other)) != -1)
+)
+
+class('java.lang.Boolean':
+  equals_mixin()
+  
+  def('!':
+    if(this: false: true)
+  )
+  def(str:
+    if(this: 'true': 'false')
+  )
+)
+
+class('java.lang.Integer':
+  equals_mixin()
+  compare_mixin()
+  
+  def('-@':
+    'java.lang.Math'.negateExact(this)
+  )
+  def('+' | other:
+    'java.lang.Math'.addExact(this, other)
+  )
+  def('-' | other:
+    'java.lang.Math'.subtractExact(this, other)
+  )
+  def('*' | other:
+    'java.lang.Math'.multiplyExact(this, other)
+  )
+  def(str:
+    'java.lang.Integer'.toString(this, 10)
+  )
+)
+
+class('java.lang.String':
+  equals_mixin()
+  compare_mixin()
+
+  def('+' | other:
+    concat(other)
+  )
+  def(str:
+    this
   )
 )

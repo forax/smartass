@@ -5,4 +5,4 @@ class('com.github.forax.smartass.rt.Script':
 )
 
 println('hello smartass')
-'done'
+''
