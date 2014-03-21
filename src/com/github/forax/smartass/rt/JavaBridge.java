@@ -145,16 +145,12 @@ class JavaBridge {
     return createTreeFromMHs(parameterIndex, types, targets);
   }
   
-  @SuppressWarnings("unused")  // called using the method handle below
-  private static boolean checkType(Class<?> type, Object object) {
-    return object.getClass() == type;
-  }
   
-  private static final MethodHandle CHECK_TYPE;
+  private static final MethodHandle IS_INSTANCE;
   static {
     try {
-      CHECK_TYPE = MethodHandles.lookup().findStatic(JavaBridge.class, "checkType",
-          MethodType.methodType(boolean.class, Class.class, Object.class));
+      IS_INSTANCE = MethodHandles.lookup().findVirtual(Class.class, "isInstance",
+          MethodType.methodType(boolean.class, Object.class));
     } catch (NoSuchMethodException | IllegalAccessException e) {
       throw new AssertionError(e);
     }
@@ -163,7 +159,11 @@ class JavaBridge {
   private static MethodHandle createTreeFromMHs(int parameterIndex, Class<?>[] types, MethodHandle[] targets) {
     MethodHandle tree = targets[0];
     for(int i = 1; i<types.length; i++) {
-      MethodHandle test = MethodHandles.dropArguments(CHECK_TYPE.bindTo(boxedType(types[i])), 0, Collections.nCopies(1 + parameterIndex, Object.class));
+      Class<?> type = types[i];
+      if (type.isPrimitive()) {
+        type = boxedType(type);
+      } 
+      MethodHandle test = MethodHandles.dropArguments(IS_INSTANCE.bindTo(type), 0, Collections.nCopies(1 + parameterIndex, Object.class));
       tree = MethodHandles.guardWithTest(test, targets[i], tree);
     }
     return tree;
