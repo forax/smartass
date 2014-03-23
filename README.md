@@ -38,6 +38,10 @@ Let suppose you have written your script in a file myscript.sms
 java -jar smartass.jar myscript.sms
 ```
 
+Where is the manual ?
+---
+there is a [reference guide](/doc/guide.md) in the doc folder.
+
 FAQ
 ---
  * I try to run the following script and it doesn't work
@@ -53,3 +57,9 @@ FAQ
    
    print(1 + 2)
    ```
+   
+ * Where is formal grammar of SmartAss ?
+ 
+   The [executable grammar](/grammar/smartass.ebnf) is defined
+   using a custom extended BNF format in the grammar folder.
+   
