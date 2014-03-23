@@ -5,6 +5,7 @@ SmartAss Reference Guide
  
  
  * Literals
+ 
    SmartAss literals are mapped to their Java equivalent,
    you can also note that there is no primitive in SmartAss,
    everything is an Object
@@ -19,7 +20,41 @@ SmartAss Reference Guide
    print('Hello SmartAss')  // String
    ```
    
+   
+ * block of code and semicolon
+ 
+   A block of code is a suite of expressions defined between
+   ':' and ')'.
+   The value of a block of code is the value of the last expression.
+   
+   Expressions are either separated by a end of line or by a semicolon,
+   so the two codes below are equivalent
+   ```
+   a = (:
+     b = 3
+     print(b)
+   )
+   ```
+   ```
+   a = (: b = 3; print(b))
+   ```
+   
+   To make the grammar regular, an end of line is always considered
+   as a separator of expressions if the text before the end of line
+   is a valid expression.
+   
+   By example, for
+   ```
+   2
+   + 3
+   ```
+   the result value is 3 (the last expression of the block)
+   and not 5 because for the end of line after '2', '2' is
+   a valid expression.
+   
+   
  * if, while, return and throw
+ 
    As a concession to practicality, SmartAss provide these 4 constructs
    that you will find in most imperative languages.
    Using them is not require.
@@ -44,7 +79,7 @@ SmartAss Reference Guide
    ```
    i = 0
    while(i < 10:
-     script.print(i)
+     print(i)
      i = i + 1
    )
    ```
@@ -54,6 +89,12 @@ SmartAss Reference Guide
    ```
    In the example above, if b = 0 before calling the code, the value
    of a is 3, if b = 3 then the value of a is null.
+   
+   While the syntax of 'if' (or 'while') and a method call is
+   very similar, the blocks defined inside an 'if' or a 'while' are
+   not lambda thus share the same environment.
+   So a block inside an 'if' can modify the variables declared
+   before the 'if'. 
    
    'throw' and 'return' can be used to stop the control flow,
    ```
@@ -74,6 +115,7 @@ SmartAss Reference Guide
     
    
  * Symbols
+ 
    In fact, a text between quotes (') is not always a String literal
    and you can create a String literal without using quotes. 
    SmartAss has the concept of symbol, a symbol is a sequence of characters
@@ -118,7 +160,8 @@ SmartAss Reference Guide
    
    
    
- * Object oriented
+ * Object Oriented
+ 
    SmartAss is object oriented, so you can create a class, add methods
    to that class, create instances of that class, call methods on
    instance, obviously polymorphism works (also named virtual call
@@ -207,6 +250,7 @@ SmartAss Reference Guide
 
 
  * Lambdas
+ 
    In SmartAss, everything is an expression, there is no declaration,
    so SmartAss use the mechanism of lambda to represent a delayed
    computation. 
@@ -239,7 +283,7 @@ SmartAss Reference Guide
    p(hello)
    ```
    
-   A variable defined in the outer environment can not be changed inside the lambda,
+   A variable defined in the outer environment can *not* be changed inside the lambda,
    because the runtime copy the value of the variable when the lambda is created.
    By example
    ```
