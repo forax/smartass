@@ -11,32 +11,29 @@ SmartAss Reference Guide
    everything is an Object
  
    ```
-   print(true)              // Boolean
-   print(false)             // Boolean
-   print(2)                 // Integer
-   print(3.14)              // Double
-   print(10000000000)       // Long
-   print(10000000000000000000000000000)  // BigInteger
-   print('Hello SmartAss')  // String
+   true              // Boolean
+   false             // Boolean
+   2                 // Integer
+   3.14              // Double
+   10000000000       // Long
+   10000000000000000000000000000  // BigInteger
+   'Hello SmartAss'  // String
    ```
    
    
  * block of code and semicolon
  
-   A block of code is a suite of expressions defined between
-   ':' and ')'.
+   A block of code is a suite of expressions.
    The value of a block of code is the value of the last expression.
    
    Expressions are either separated by a end of line or by a semicolon,
    so the two codes below are equivalent
    ```
-   a = (:
-     b = 3
-     print(b)
-   )
+   b = 3
+   print(b)
    ```
    ```
-   a = (: b = 3; print(b))
+   b = 3; print(b)
    ```
    
    To make the grammar regular, an end of line is always considered
