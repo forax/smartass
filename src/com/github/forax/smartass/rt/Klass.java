@@ -51,6 +51,9 @@ public class Klass {
   public Function def(String name, Function body) {
     Objects.requireNonNull(name);
     Objects.requireNonNull(body);
+    if (methodMap.get(name) != null) {
+      throw new LinkageError("a method " + name + " already exist in klass " + this.name);
+    }
     methodMap.put(name, body);
     return body;
   }
