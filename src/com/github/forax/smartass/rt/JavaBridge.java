@@ -8,11 +8,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Proxy;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.stream.Collectors;import java.util.stream.IntStream;
 
 class JavaBridge {
@@ -238,24 +241,69 @@ class JavaBridge {
   }
 
   private static MethodHandle createMH(Method method) {
+    int modifiers = method.getModifiers();
+    boolean isStatic = Modifier.isStatic(modifiers);
+    Class<?> declaringClass = method.getDeclaringClass();
     MethodHandle mh;
     try {
-      mh = MethodHandles.publicLookup().unreflect(method);
-      mh = conversionFilter(mh);
+      if (isStatic || Modifier.isPublic(declaringClass.getModifiers())) {
+        mh = MethodHandles.publicLookup().unreflect(method);
+        if (isStatic) {
+          // a static method should skip the first parameter
+          mh = MethodHandles.dropArguments(mh, 0, Object.class);
+        }
+      } else {
+        mh = findVirtualMHInHierarchy(declaringClass, method.getName(),
+               MethodType.methodType(method.getReturnType(), method.getParameterTypes()));
+      
+      }
     } catch (IllegalAccessException e) {
-      // a method handle that will always throw the IllegalAccessException
-      mh = MethodHandles.throwException(method.getReturnType(), IllegalAccessException.class);
-      mh = mh.bindTo(e);
-      mh = MethodHandles.dropArguments(mh, 0,
-          MethodType.genericMethodType(method.getParameterCount()).parameterList());
+      return willThrowAnException(method, e);
     }
-    // after this point, the method handle parameters are only objects
+    return conversionFilter(mh);
+  }
+  
+  private static MethodHandle willThrowAnException(Method method, Exception e) {
+    MethodHandle mh = MethodHandles.throwException(method.getReturnType(), IllegalAccessException.class);
+    mh = mh.bindTo(e);
+    return MethodHandles.dropArguments(mh, 0,
+        MethodType.genericMethodType(1 + method.getParameterCount()).parameterList());
+  }
+  
+  private static MethodHandle findVirtualMHInHierarchy(Class<?> declaringClass, String name, MethodType methodType) throws IllegalAccessException {
+    // first lookup in super class hierarchy
+    LinkedHashSet<Class<?>> interfaces = new LinkedHashSet<>();
+    Collections.addAll(interfaces, declaringClass.getInterfaces());
+    for(Class<?> type = declaringClass.getSuperclass(); type != null; type = type.getSuperclass()) {
+      if (Modifier.isPublic(type.getModifiers())) {
+        try {
+          return MethodHandles.publicLookup().findVirtual(type, name, methodType);
+        } catch(NoSuchMethodException e) {
+          Collections.addAll(interfaces, type.getInterfaces());
+          break;
+        }
+      }
+      Collections.addAll(interfaces, type.getInterfaces());
+    }
     
-    if (Modifier.isStatic(method.getModifiers())) {
-      // a static method should skip the first parameter
-      mh = MethodHandles.dropArguments(mh, 0, Object.class);
+    // not found in the super class hierarchy, try interface hierarchy
+    ArrayDeque<Class<?>> queue = new ArrayDeque<>(interfaces);
+    Class<?> interfaceType;
+    while((interfaceType = queue.poll()) != null) {
+      if (Modifier.isPublic(interfaceType.getModifiers())) {
+        try {
+          return MethodHandles.publicLookup().findVirtual(interfaceType, name, methodType);
+        } catch(NoSuchMethodException e) {
+          // do nothing
+        }
+      }
+      for(Class<?> iType: interfaceType.getInterfaces()) {
+        if (interfaces.add(iType) == true) {  // only add unknown interface to the queue
+          queue.add(iType); 
+        }
+      }
     }
-    return mh;
+    throw new IllegalAccessException("method " + declaringClass.getName() + '.' + name + methodType + " not visible");
   }
 
   private static final MethodHandle IS_INSTANCE;
@@ -269,11 +317,11 @@ class JavaBridge {
       isInstance = lookup.findVirtual(Class.class, "isInstance",
           MethodType.methodType(boolean.class, Object.class));
       proxyFunction = lookup.findStatic(JavaBridge.class, "proxyFunction",
-          MethodType.methodType(Object.class, Function.class));
+          MethodType.methodType(Object.class, Class.class, Object.class));
     } catch (NoSuchMethodException | IllegalAccessException e) {
       throw new AssertionError(e);
     }
-    PROXY_FUNCTION = proxyFunction.asType(MethodType.methodType(Object.class, Object.class));
+    PROXY_FUNCTION = proxyFunction.asType(MethodType.methodType(Object.class, Class.class, Object.class));
     IS_INSTANCE = isInstance;
     FUNCTION_TEST = isInstance.bindTo(Function.class);
     IDENTITY = MethodHandles.identity(Object.class);
@@ -284,8 +332,9 @@ class JavaBridge {
     int parameterCount = type.parameterCount();
     MethodHandle[] filters = new MethodHandle[parameterCount];
     for(int i = 0; i < parameterCount; i++) {
-      if (type.parameterType(i).isInterface()) {
-        MethodHandle filter = MethodHandles.guardWithTest(FUNCTION_TEST, PROXY_FUNCTION, IDENTITY);
+      Class<?> parameterType = type.parameterType(i);
+      if (parameterType.isInterface()) {
+        MethodHandle filter = MethodHandles.guardWithTest(FUNCTION_TEST, PROXY_FUNCTION.bindTo(parameterType), IDENTITY);
         filters[i] = filter;
       }
     }
@@ -294,9 +343,18 @@ class JavaBridge {
   }
   
   @SuppressWarnings("unused")  // called using a method handle
-  private static Object proxyFunction(Function function) {
-    //function.getTarget(script);
-    return function; //TODO finish
+  private static Object proxyFunction(Class<?> interfaceType, Object fun) {
+    Function function = (Function)fun;
+    return Proxy.newProxyInstance(interfaceType.getClassLoader(), new Class<?>[]{interfaceType},
+        (Object proxy, Method method, Object[] args) -> {
+          if (method.isDefault() || method.getDeclaringClass() == Object.class) {
+            return method.invoke(proxy, args);
+          }
+          Object[] arguments = new Object[1 + args.length];
+          arguments[0] = proxy;
+          System.arraycopy(args, 0, arguments, 1, args.length);
+          return function.getTarget().invokeWithArguments(arguments);
+        });
   }
 
   private static void gatherMethods(Class<?> type,

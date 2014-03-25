@@ -9,8 +9,6 @@ To achieve that goal SmartAss has a handful of concepts.
  
   * Every syntax construction is an expression.
   
-  * A name is a reference to a local variable, a class or a symbol.
-  
   * Variables are dynamically typed *and* locally scoped.
   
   * All values are objects.

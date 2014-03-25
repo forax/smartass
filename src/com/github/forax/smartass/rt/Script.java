@@ -293,7 +293,7 @@ public class Script {
       }
     }
     if (args.length != mh.type().parameterCount()) {
-      throw new LinkageError("wrong number of arguments(" + args.length + ") to call " + selector);
+      throw new LinkageError("wrong number of arguments(" + args.length + ") to call " + selector + ' ' + mh.type());
     }
     return mh.invokeWithArguments(args);
   }

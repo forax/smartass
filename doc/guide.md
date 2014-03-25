@@ -344,7 +344,7 @@ SmartAss Reference Guide
    is more or less equivalent to
    ```
    class(Point | x, y:
-     def('x': x())
+     def('x': this.x())
    )
    Point(1, 2).x()  // 1
    ```
