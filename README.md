@@ -13,6 +13,9 @@ To achieve that goal SmartAss has a handful of concepts.
   
   * All values are objects.
   
+  * Guarantee that the entropy of the behaviors can only grow (but not side effect free)
+    
+  
   
 How to install it ?
 ---
