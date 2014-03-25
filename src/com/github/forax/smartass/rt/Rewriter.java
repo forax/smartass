@@ -39,22 +39,22 @@ public class Rewriter {
   
   
   static class Env {
+    final Script script;
     private final MethodVisitor mv;
-    private final ConstantDictionnary dictionnary;
-    private final HashMap<String, Integer> slotMap; 
+    private final HashMap<String, Integer> slotMap;
     
-    private Env(MethodVisitor mv, ConstantDictionnary dictionnary, HashMap<String, Integer> slotMap) {
+    private Env(Script script, MethodVisitor mv, HashMap<String, Integer> slotMap) {
+      this.script = script;
       this.mv = mv;
-      this.dictionnary = dictionnary;
       this.slotMap = slotMap;
     }
     
-    Env(MethodVisitor mv, ConstantDictionnary dictionnary) {
-      this(mv, dictionnary, new HashMap<>());
+    Env(Script script, MethodVisitor mv) {
+      this(script, mv, new HashMap<>());
     }
     
     Env newEnv() {
-      return new Env(mv, dictionnary, new HashMap<>(slotMap));
+      return new Env(script, mv, new HashMap<>(slotMap));
     }
     
     public Integer lookupSlotOrNull(String name) {
@@ -90,7 +90,7 @@ public class Rewriter {
     public void emitIndy(String bsmName, String name, String desc, Object constObject) {
       mv.visitInvokeDynamicInsn(name, desc,
           new Handle(H_INVOKESTATIC, INTERNAL_NAME, bsmName, BSM_INT_SIG),
-          dictionnary.intern(constObject));
+          script.dictionnary.intern(constObject));
     }
     
     public void emitLineNumber(int lineNumber) {
@@ -131,9 +131,12 @@ public class Rewriter {
           })
           .when(VarAccess.class, (expr, env) -> {
             String name = expr.getId();
-            Integer slotOrNull = env.lookupSlotOrNull(name);
-            if (slotOrNull == null) {   // unknown local variable, so it's a symbol
-              // may be the symbol can be different depending on 'this' ??
+            boolean quoted = name.charAt(0) == '\'';
+            Integer slotOrNull;
+            if (quoted || (slotOrNull = env.lookupSlotOrNull(name)) == null) {   // it's a symbol ?
+              if (quoted) { // remove enclosing quotes
+                name = name.substring(1, name.length() - 1);  
+              }
               env.emitIndy("bsm_symbol", "symbol", "()Ljava/lang/Object;", name);
             } else {
               env.emitVar(ALOAD, slotOrNull);
@@ -161,7 +164,7 @@ public class Rewriter {
                 env.emitVar(ALOAD, slotOrNull);
               }
             }
-            Function function = new Function(freeVars, lambda.getParameters(), lambda.getBlock());
+            Function function = new Function(env.script, freeVars, lambda.getParameters(), lambda.getBlock());
             env.emitIndy("bsm_lambda", "lambda", desc(freeVars.size()), function);
           })
           .when(MethodCall.class, (call, env) -> {
@@ -303,7 +306,7 @@ public class Rewriter {
           })
           ;
   
-  public static byte[] rewrite(Function function, String className, ConstantDictionnary dictionnary) {
+  public static byte[] rewrite(Script script, Function function, String className) {
     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS|ClassWriter.COMPUTE_FRAMES);
     writer.visit(V1_8, ACC_PUBLIC|ACC_SUPER, className.replace('.',  '/'), null, "java/lang/Object", null);
     writer.visitSource("script", null);
@@ -312,7 +315,7 @@ public class Rewriter {
     List<String> parameters = function.getParameters();
     
     MethodVisitor mv = writer.visitMethod(ACC_PUBLIC|ACC_STATIC, "lambda", desc(freeVars.size() + 1 + parameters.size()), null, null);
-    Env env = new Env(mv, dictionnary);
+    Env env = new Env(script, mv);
     for(String freeVar: freeVars) {
       env.registerSlot(freeVar);
     }

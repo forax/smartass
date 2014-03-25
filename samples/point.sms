@@ -1,6 +1,6 @@
 class(Point | x, y:
-  def(x: @x)
-  def(y: @y)
+  def('x': @x)
+  def('y': @y)
 )
 
 p = Point(1, 2)

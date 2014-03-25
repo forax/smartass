@@ -2,6 +2,7 @@ package com.github.forax.smartass.rt;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -50,7 +51,7 @@ class JavaBridge {
       //System.out.println("register field " + field.getName());
       staticKlass.getMethodMap().put(field.getName(),
           new Function(Collections.emptyList(), Collections.emptyList(), null,
-              (script, fun) -> {
+              fun -> {
                 MethodHandle mh;
                 try {
                   mh = MethodHandles.publicLookup().unreflectGetter(field);
@@ -68,10 +69,10 @@ class JavaBridge {
     classMap.forEach((name, methods) -> {
       
       Method method = methods.get(0);
-      Function function = new Function(Collections.<String>emptyList(),
+      Function function = new Function(Collections.emptyList(),
           Arrays.stream(method.getParameters()).map(Parameter::getName).collect(Collectors.toList()),
           null,
-          (script, fun) -> {
+          fun -> {
             if (methods.size() == 1) {
               return createMH(methods.get(0));
             }
@@ -143,17 +144,6 @@ class JavaBridge {
     }
     
     return createTreeFromMHs(parameterIndex, types, targets);
-  }
-  
-  
-  private static final MethodHandle IS_INSTANCE;
-  static {
-    try {
-      IS_INSTANCE = MethodHandles.lookup().findVirtual(Class.class, "isInstance",
-          MethodType.methodType(boolean.class, Object.class));
-    } catch (NoSuchMethodException | IllegalAccessException e) {
-      throw new AssertionError(e);
-    }
   }
   
   private static MethodHandle createTreeFromMHs(int parameterIndex, Class<?>[] types, MethodHandle[] targets) {
@@ -251,19 +241,62 @@ class JavaBridge {
     MethodHandle mh;
     try {
       mh = MethodHandles.publicLookup().unreflect(method);
+      mh = conversionFilter(mh);
     } catch (IllegalAccessException e) {
       // a method handle that will always throw the IllegalAccessException
       mh = MethodHandles.throwException(method.getReturnType(), IllegalAccessException.class);
       mh = mh.bindTo(e);
-      mh = MethodHandles.dropArguments(mh, 0, method.getParameterTypes());
+      mh = MethodHandles.dropArguments(mh, 0,
+          MethodType.genericMethodType(method.getParameterCount()).parameterList());
     }
-    mh = mh.asType(mh.type().generic());
+    // after this point, the method handle parameters are only objects
     
     if (Modifier.isStatic(method.getModifiers())) {
       // a static method should skip the first parameter
       mh = MethodHandles.dropArguments(mh, 0, Object.class);
     }
     return mh;
+  }
+
+  private static final MethodHandle IS_INSTANCE;
+  private static final MethodHandle FUNCTION_TEST;
+  private static final MethodHandle PROXY_FUNCTION;
+  private static final MethodHandle IDENTITY;
+  static {
+    Lookup lookup = MethodHandles.lookup();
+    MethodHandle isInstance, proxyFunction;
+    try {
+      isInstance = lookup.findVirtual(Class.class, "isInstance",
+          MethodType.methodType(boolean.class, Object.class));
+      proxyFunction = lookup.findStatic(JavaBridge.class, "proxyFunction",
+          MethodType.methodType(Object.class, Function.class));
+    } catch (NoSuchMethodException | IllegalAccessException e) {
+      throw new AssertionError(e);
+    }
+    PROXY_FUNCTION = proxyFunction.asType(MethodType.methodType(Object.class, Object.class));
+    IS_INSTANCE = isInstance;
+    FUNCTION_TEST = isInstance.bindTo(Function.class);
+    IDENTITY = MethodHandles.identity(Object.class);
+  }
+  
+  private static MethodHandle conversionFilter(MethodHandle mh) {
+    MethodType type = mh.type();
+    int parameterCount = type.parameterCount();
+    MethodHandle[] filters = new MethodHandle[parameterCount];
+    for(int i = 0; i < parameterCount; i++) {
+      if (type.parameterType(i).isInterface()) {
+        MethodHandle filter = MethodHandles.guardWithTest(FUNCTION_TEST, PROXY_FUNCTION, IDENTITY);
+        filters[i] = filter;
+      }
+    }
+    mh = mh.asType(type.generic());
+    return MethodHandles.filterArguments(mh, 0, filters);
+  }
+  
+  @SuppressWarnings("unused")  // called using a method handle
+  private static Object proxyFunction(Function function) {
+    //function.getTarget(script);
+    return function; //TODO finish
   }
 
   private static void gatherMethods(Class<?> type,

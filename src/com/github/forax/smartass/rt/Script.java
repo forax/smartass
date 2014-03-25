@@ -33,7 +33,7 @@ import com.github.forax.smartass.ast.ASTBuilder;
 import com.github.forax.smartass.ast.Block;
 
 public class Script {
-  private final ConstantDictionnary dictionnary = new ConstantDictionnary();
+  final ConstantDictionnary dictionnary = new ConstantDictionnary();
   private final ScriptClassLoader classLoader = new ScriptClassLoader();
   final HashMap<String, Klass> klassCache = new HashMap<>();
   
@@ -112,7 +112,7 @@ public class Script {
   MethodHandle createFunctionMH(Function function) {
     int constantIndex = dictionnary.intern(function);
     String className = "do.$" + constantIndex;
-    byte[] bytecodes = Rewriter.rewrite(function, className, dictionnary);
+    byte[] bytecodes = Rewriter.rewrite(this, function, className);
     CheckClassAdapter.verify(new ClassReader(bytecodes), false, new PrintWriter(System.out));
     Class<?> clazz = classLoader.defineClasse(className, bytecodes);
     MethodHandle target;
@@ -225,7 +225,7 @@ public class Script {
   }
   
   private static final MethodHandle LAMBDA =
-      findVirtual(Script.class, "lambda", Object.class, Function.class, Object[].class);
+      findStatic(Script.class, "lambda", Object.class, Function.class, Object[].class);
   
   @MethodInfo(hidden=true)
   public static CallSite bsm_lambda(Lookup lookup, @SuppressWarnings("unused") String name, MethodType type, int constantIndex) {
@@ -237,14 +237,14 @@ public class Script {
     if (function.getFreeVars().isEmpty()) {
       return new ConstantCallSite(MethodHandles.constant(Object.class, function));
     }
-    return new ConstantCallSite(LAMBDA.bindTo(script).bindTo(function).asCollector(Object[].class, type.parameterCount()));
+    return new ConstantCallSite(LAMBDA.bindTo(function).asCollector(Object[].class, type.parameterCount()));
   }
   
   @SuppressWarnings("unused")  // called from a method handle
-  private Object lambda(Function function, Object[] boundValues) {
+  private static Object lambda(Function function, Object[] boundValues) {
     // create a new lambda with the same values
     return new Function(function.getFreeVars(), function.getParameters(), function.getBlock(),
-        (script, __) -> MethodHandles.insertArguments(function.getTarget(this), 0, boundValues)
+         __ -> MethodHandles.insertArguments(function.getTarget(), 0, boundValues)
     );
   }
   
@@ -276,7 +276,7 @@ public class Script {
   private Object method_call(Object selector, Object[] args) throws Throwable {
     MethodHandle mh;
     if (selector instanceof Function) {
-      mh = ((Function)selector).getTarget(this);
+      mh = ((Function)selector).getTarget();
     } else {
       if (selector instanceof Klass) {
         mh = ((Klass)selector).getTarget(this);
@@ -286,7 +286,7 @@ public class Script {
           if (method == null) {
             throw new LinkageError("no method '" + selector + "' defined on " + getKlass(args[0]));
           }
-          mh = method.getTarget(this);
+          mh = method.getTarget();
         } else {
           throw new LinkageError("invalid selector " + selector);
         }
@@ -360,7 +360,7 @@ public class Script {
     for(int i = 1; i < args.length; i++) {
       args[i] = fieldAccessor(parameters.get(i - 1));
     }
-    body.getTarget(this).invokeWithArguments(args);
+    body.getTarget().invokeWithArguments(args);
     return klass;
   }
   
@@ -368,7 +368,7 @@ public class Script {
   public Function fieldAccessor(String name) {
     Objects.requireNonNull(name);
     return new Function(Collections.emptyList(), Collections.emptyList(), null,
-        (script, fun) -> Script.bsm_field_get(null /*unused*/, name, null /*unused*/).dynamicInvoker()
+        fun -> Script.bsm_field_get(null /*unused*/, name, null /*unused*/).dynamicInvoker()
         );
   }
   
@@ -380,13 +380,13 @@ public class Script {
     return new Function(Collections.emptyList(),
         IntStream.range(0, parameterCount).mapToObj(value -> "arg" + value).collect(Collectors.toList()),
         null,
-        (script, fun) -> METHOD_CALL.bindTo(this).asCollector(Object[].class, parameterCount)
+        fun -> METHOD_CALL.bindTo(this).asCollector(Object[].class, parameterCount)
         );
   }
   
   public Object eval(Block block) throws Throwable {
-    Function main = new Function(Collections.emptyList(), Collections.emptyList(), block);
-    return main.getTarget(this).invokeExact((Object)this);
+    Function main = new Function(this, Collections.emptyList(), Collections.emptyList(), block);
+    return main.getTarget().invokeExact((Object)this);
   }
   
   public Object require(String filename) throws Throwable {

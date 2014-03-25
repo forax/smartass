@@ -59,9 +59,8 @@ public class ASTBuilder implements GrammarEvaluator {
 
     @Override
     public Token<String> text(CharSequence data) {
-      String text = data.toString();
-      text = text.substring(1, text.length() - 1);  // remove enclosing quotes
-      return new Token<>(text, createLocation());
+      // the quotes will be removed in the rewriter
+      return new Token<>(data.toString(), createLocation());
     }
     @Override
     public Token<String> id(CharSequence data) {

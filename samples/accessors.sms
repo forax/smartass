@@ -6,8 +6,8 @@ class('com.github.forax.smartass.rt.Klass':
 )
 
 class(Point | x, y:
-  accessor(x)
-  accessor(y)
+  accessor('x')
+  accessor('y')
 )
 
 p = Point(1, 2)

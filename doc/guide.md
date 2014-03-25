@@ -17,7 +17,7 @@ SmartAss Reference Guide
    3.14              // Double
    10000000000       // Long
    10000000000000000000000000000  // BigInteger
-   'Hello SmartAss'  // String
+   'foo'             // symbol (String or Klass)
    ```
    
    
@@ -95,13 +95,13 @@ SmartAss Reference Guide
    
    'throw' and 'return' can be used to stop the control flow,
    ```
-   if(a==3:
+   if(a == 3:
      return 2
    )
    ```
    or
    ```
-   if(a==3:
+   if(a == 3:
      throw 2
    )
    ```
@@ -111,40 +111,42 @@ SmartAss Reference Guide
    an exception in SmartAss).
     
    
- * Symbols
- 
-   In fact, a text between quotes (') is not always a String literal
-   and you can create a String literal without using quotes. 
-   SmartAss has the concept of symbol, a symbol is a sequence of characters
-   that can be a local variable, a Klass literal or a String literal.
+ * Local variable and Symbols
    
-   By example, in the following code the symbol a denote a local variable
+   A local variable exists from the first time the variable is assigned
+   to the last time the local variable is read.
    ```
-   a = 3
-   print(a)   // prints 3
+   a = 2      // a is created
+   b = a      // b is created then a is destroyed
+   print(b)   // b is destroyed
    ```
-   while in this code the symbol a denote a String
+   
+   If a local variable is read without being assigned,
+   SmartAss consider that the variable is a symbol,
+   a reference to a String or a Klass.
+   By example, in the code below, 'a' is considered as a String
+   not a local variable.
    ```
    print(a)   // print a
    ```
-   because there is not declaration of a local variable 'a' in the current
-   environment.
    
-   Another example, in the following code
+   The same mechanism when calling a method,
+   by example
    ```
-     result = sum(3, 4)
+   result = sum(3, 4)
    ```
-   sum() is a method call with sum a String literal and
+   call the method 'sum' of this while the code
+   below calls the lambda stored in 'sum'
+   
    ```
-     lambda = (a, b: a + b)
-     sum = lambda
-     result = sum(3, 7)
+   sum = (a, b: a + b)
+   result = sum(3, 7)
    ```
-   is a lambda call with sum a local variable.
    
    A symbol can also denote a Klass literal, that can be used to create
-   an instance of a class. In the following code, Book is a String in the
-   first line and a Klass in the 4th line.
+   an instance of a Klass. In the following code, Book is a String in the
+   first line and a Klass in the 4th line because a call to 'class'
+   register the newly created Klass in the environment.
    ```
    class(Book | author, title:
    )
@@ -211,7 +213,7 @@ SmartAss Reference Guide
    The following code does the same thing but in a more idiomatic way
    ```
    class(Book | author, title:
-     def(author: @author )
+     def('author': @author )
    )
    b = Book('Dan Brown', 'Da Vinci Code')
    b.author()  // Dan Brown
@@ -222,10 +224,10 @@ SmartAss Reference Guide
    so the following code is valid
    ```
    class(Book | author, title:
-     def(author: @author )
+     def('author': @author )
    )
-   class(Book:                  // re-open the class Book
-     def(title: @title )
+   class(Book:                // re-open the class Book
+     def('title': @title )
    )
    ```
    But unlike in Ruby you can not add new fields when
@@ -335,15 +337,14 @@ SmartAss Reference Guide
    and even a field access can be seen as a method call
    ```
    class(Point | x, y:
-     def(x: @x)
+     def('x': @x)
    )
    Point(1, 2).x()  // 1
    ```
    is more or less equivalent to
    ```
    class(Point | x, y:
-     oldx = x
-     def(x: oldx())
+     def('x': x())
    )
    Point(1, 2).x()  // 1
    ```
