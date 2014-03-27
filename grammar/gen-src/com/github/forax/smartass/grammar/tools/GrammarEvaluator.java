@@ -3,6 +3,7 @@ package com.github.forax.smartass.grammar.tools;
 import com.github.forax.smartass.ast.Expr;
 import com.github.forax.smartass.ast.Lambda;
 import com.github.forax.smartass.ast.Location;
+import com.github.forax.smartass.ast.Parameter;
 import com.github.forax.smartass.ast.Token;
 import java.util.List;
 
@@ -36,6 +37,11 @@ public interface GrammarEvaluator {
    */
   public Expr instr_expr(Expr expr);
   /** This methods is called after the reduction of the non terminal instr
+   *  by the grammar production instr_doc_expr.
+   *  <code>instr ::= doc_plus_1 expr</code>
+   */
+  public Expr instr_doc_expr(List<Token<String>> doc_plus,Expr expr);
+  /** This methods is called after the reduction of the non terminal instr
    *  by the grammar production instr_return.
    *  <code>instr ::= _return expr</code>
    */
@@ -47,19 +53,9 @@ public interface GrammarEvaluator {
   public Expr instr_throw(Expr expr);
   /** This methods is called after the reduction of the non terminal block
    *  by the grammar production block.
-   *  <code>block ::= instrs_optional_1</code>
+   *  <code>block ::= instrs_optional_2</code>
    */
   public List<Expr> block(List<Expr> instrs_optional);
-  /** This methods is called after the reduction of the non terminal block_param
-   *  by the grammar production block_param_block.
-   *  <code>block_param ::= colon block</code>
-   */
-  public Lambda block_param_block(Location colon,List<Expr> block);
-  /** This methods is called after the reduction of the non terminal block_param
-   *  by the grammar production block_param_lambda.
-   *  <code>block_param ::= pipe id_star_2 colon block</code>
-   */
-  public Lambda block_param_lambda(Location pipe,List<Token<String>> id_star,Location colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal name
    *  by the grammar production name_id.
    *  <code>name ::= id</code>
@@ -70,6 +66,26 @@ public interface GrammarEvaluator {
    *  <code>name ::= text</code>
    */
   public Token<String> name_text(Token<String> text);
+  /** This methods is called after the reduction of the non terminal block_param
+   *  by the grammar production block_param_block.
+   *  <code>block_param ::= colon block</code>
+   */
+  public Lambda block_param_block(Location colon,List<Expr> block);
+  /** This methods is called after the reduction of the non terminal block_param
+   *  by the grammar production block_param_lambda.
+   *  <code>block_param ::= pipe parameter_star_3 colon block</code>
+   */
+  public Lambda block_param_lambda(Location pipe,List<Parameter> parameter_star,Location colon,List<Expr> block);
+  /** This methods is called after the reduction of the non terminal parameter
+   *  by the grammar production parameter_hint_id.
+   *  <code>parameter ::= name id</code>
+   */
+  public Parameter parameter_hint_id(Token<String> name,Token<String> id);
+  /** This methods is called after the reduction of the non terminal parameter
+   *  by the grammar production parameter_id.
+   *  <code>parameter ::= id</code>
+   */
+  public Parameter parameter_id(Token<String> id);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_value.
    *  <code>expr ::= value</code>
@@ -102,17 +118,17 @@ public interface GrammarEvaluator {
   public Expr expr_block(Location colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_lambda.
-   *  <code>expr ::= lpar id_plus_3 colon block rpar</code>
+   *  <code>expr ::= lpar parameter_plus_4 colon block rpar</code>
    */
-  public Expr expr_lambda(List<Token<String>> id_plus,Location colon,List<Expr> block);
+  public Expr expr_lambda(List<Parameter> parameter_plus,Location colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_funcall.
-   *  <code>expr ::= expr lpar expr_star_4 block_param_optional_5 rpar</code>
+   *  <code>expr ::= expr lpar expr_star_5 block_param_optional_6 rpar</code>
    */
   public Expr expr_funcall(Expr expr,List<Expr> expr_star,Lambda block_param_optional);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_mthcall.
-   *  <code>expr ::= expr dot name lpar expr_star_6 block_param_optional_7 rpar</code>
+   *  <code>expr ::= expr dot name lpar expr_star_7 block_param_optional_8 rpar</code>
    */
   public Expr expr_mthcall(Expr expr,Token<String> name,List<Expr> expr_star,Lambda block_param_optional);
   /** This methods is called after the reduction of the non terminal expr

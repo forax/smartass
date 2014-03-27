@@ -30,10 +30,12 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.util.CheckClassAdapter;
 
 import com.github.forax.smartass.ast.ASTBuilder;
-import com.github.forax.smartass.ast.Block;
+import com.github.forax.smartass.ast.Lambda;
+import com.github.forax.smartass.ast.Parameter;
+import com.github.forax.smartass.rt.Rewriter.ProtoFun;
 
 public class Script {
-  final ConstantDictionnary dictionnary = new ConstantDictionnary();
+  private final ConstantDictionary dictionary = new ConstantDictionary();
   private final ScriptClassLoader classLoader = new ScriptClassLoader();
   final HashMap<String, Klass> klassCache = new HashMap<>();
   
@@ -110,9 +112,9 @@ public class Script {
   }
   
   MethodHandle createFunctionMH(Function function) {
-    int constantIndex = dictionnary.intern(function);
-    String className = "do.$" + constantIndex;
-    byte[] bytecodes = Rewriter.rewrite(this, function, className);
+    int constantIndex = dictionary.intern(function); //FIXME, don't use the dictionary to store a function
+    String className = "do.$" + constantIndex;  
+    byte[] bytecodes = Rewriter.rewrite(function, className, dictionary);
     CheckClassAdapter.verify(new ClassReader(bytecodes), false, new PrintWriter(System.out));
     Class<?> clazz = classLoader.defineClasse(className, bytecodes);
     MethodHandle target;
@@ -172,7 +174,7 @@ public class Script {
     ScriptClassLoader classLoader = (ScriptClassLoader)lookup.lookupClass().getClassLoader();
     Script script = classLoader.getScript();
     
-    String symbol = (String)script.dictionnary.getConstantAt(constantIndex);
+    String symbol = (String)script.dictionary.getConstantAt(constantIndex);
     Object constant = symbol;
     
     Klass klass = script.klassCache.get(symbol);
@@ -231,7 +233,11 @@ public class Script {
   public static CallSite bsm_lambda(Lookup lookup, @SuppressWarnings("unused") String name, MethodType type, int constantIndex) {
     ScriptClassLoader classLoader = (ScriptClassLoader)lookup.lookupClass().getClassLoader();
     Script script = classLoader.getScript();
-    Function function = (Function)script.dictionnary.getConstantAt(constantIndex);
+    ProtoFun protoFun = (ProtoFun)script.dictionary.getConstantAt(constantIndex);
+    
+    Function function = new Function(script, protoFun.freeVars,
+        protoFun.lambda.getParameters().stream().map(Parameter::getName).collect(Collectors.toList()),
+        protoFun.lambda);
     
     // no free variables, always return the same function
     if (function.getFreeVars().isEmpty()) {
@@ -243,7 +249,7 @@ public class Script {
   @SuppressWarnings("unused")  // called from a method handle
   private static Object lambda(Function function, Object[] boundValues) {
     // create a new lambda with the same values
-    return new Function(function.getFreeVars(), function.getParameters(), function.getBlock(),
+    return new Function(function.getFreeVars(), function.getParameters(), function.getLambda(),
          __ -> MethodHandles.insertArguments(function.getTarget(), 0, boundValues)
     );
   }
@@ -337,6 +343,12 @@ public class Script {
     return new Error(value.toString());
   }
   
+  @MethodInfo(hidden=true)
+  public Object eval(Lambda lambda) throws Throwable {
+    Objects.requireNonNull(lambda);
+    Function main = new Function(this, Collections.emptyList(), Collections.emptyList(), lambda);
+    return main.getTarget().invokeExact((Object)this);
+  }
   
   // ---------------------------
   // public API !
@@ -384,16 +396,11 @@ public class Script {
         );
   }
   
-  public Object eval(Block block) throws Throwable {
-    Function main = new Function(this, Collections.emptyList(), Collections.emptyList(), block);
-    return main.getTarget().invokeExact((Object)this);
-  }
-  
   public Object require(String filename) throws Throwable {
-    Block block;
+    Lambda lambda;
     try(Reader reader = Files.newBufferedReader(Paths.get(filename))) {
-      block = ASTBuilder.parseBlock(reader);
+      lambda = ASTBuilder.parseScript(reader);
     }
-    return eval(block);
+    return eval(lambda);
   }
 }

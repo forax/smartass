@@ -3,7 +3,7 @@ package com.github.forax.smartass.rt;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-class ConstantDictionnary {
+class ConstantDictionary {
   private final HashMap<Object, Integer> constantMap = new HashMap<>();
   private final ArrayList<Object> constantList = new ArrayList<>();
   

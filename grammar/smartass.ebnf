@@ -7,6 +7,7 @@ imports:
   com.github.forax.smartass.ast.Expr
   com.github.forax.smartass.ast.Lambda
   com.github.forax.smartass.ast.Location
+  com.github.forax.smartass.ast.Parameter
   com.github.forax.smartass.ast.Token
   
 priorities:
@@ -36,6 +37,7 @@ tokens:
   bang = '!' 
   pipe = '\|'      
   at = '@'    
+  sharp = '#'
   colon= ':'
   comma=','
   semicolon = ';'
@@ -54,6 +56,7 @@ tokens:
   value = "([0-9]+(\.[0-9]+)?)|true|false"
   id = "([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*"
   text = "'([^'])*'"
+  doc = "#([^\r\n])*(\r)?\n"
  
 blanks:
  space = "( |\t|\r|\n)"
@@ -64,6 +67,7 @@ comments:
 types:
  'id': Token<String>
  'text': Token<String>
+ 'doc': Token<String>
  'value': Token<String>
  'lopt': Location
  'lcurl': Location
@@ -75,6 +79,7 @@ types:
  instr: Expr
  instrs: List<Expr>
  block: List<Expr>
+ parameter: Parameter
  block_param: Lambda
 
 starts:
@@ -93,21 +98,26 @@ productions:
         | instr              { instrs_instr }
         ;
         
- instr = expr                { instr_expr }
-       | 'return' expr       { instr_return }
-       | 'throw' expr        { instr_throw }
+ instr = expr                                       { instr_expr }
+       | 'doc'+  expr                               { instr_doc_expr }
+       | 'return' expr                              { instr_return }
+       | 'throw' expr                               { instr_throw }
        ;
   
  block = instrs?      { block }
        ;
-  
- block_param = ':' block                       { block_param_block }
-             | '|' 'id'/'comma'* ':' block     { block_param_lambda }
-             ;
-  
+       
  name = 'id'       { name_id }
       | 'text'     { name_text }
-      ;
+      ; 
+  
+ block_param = ':' block                            { block_param_block }
+             | '|' parameter/'comma'* ':' block     { block_param_lambda }
+             ;
+  
+ parameter = name 'id'       { parameter_hint_id }
+           | 'id'            { parameter_id }
+           ;
  
  expr = 'value'                                               { expr_value }
       | '(' expr ')'                                          { expr_parens }
@@ -116,7 +126,7 @@ productions:
       
       | '@' 'id'                                              { expr_field_access }
       | '(' ':' block ')'                                     { expr_block }
-      | '(' 'id'/'comma'+ ':' block ')'                       { expr_lambda }
+      | '(' parameter/'comma'+ ':' block ')'                  { expr_lambda }
       
       | expr '(' expr/'comma'* block_param? ')'               { expr_funcall }
       | expr '.' name '(' expr/'comma'* block_param? ')'      { expr_mthcall }

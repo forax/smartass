@@ -16,12 +16,12 @@ import fr.umlv.tatoo.runtime.buffer.impl.LocationTracker;
 import fr.umlv.tatoo.runtime.buffer.impl.ReaderWrapper;
 
 public class ASTBuilder implements GrammarEvaluator {
-  public static Block parseBlock(Reader reader) {
+  public static Lambda parseScript(Reader reader) {
     LocationTracker tracker = new LocationTracker();
     ReaderWrapper buffer = new ReaderWrapper(reader, tracker);
     ASTBuilder astBuilder = new ASTBuilder();
     Analyzers.run(buffer, new TerminalBuilder(tracker), astBuilder, null, null);
-    return astBuilder.block;
+    return astBuilder.lambda;
   }
   
   static class TerminalBuilder implements TerminalEvaluator<CharSequence> {
@@ -70,9 +70,13 @@ public class ASTBuilder implements GrammarEvaluator {
     public Token<String> value(CharSequence data) {
       return new Token<>(data.toString(), createLocation());
     }
+    @Override
+    public Token<String> doc(CharSequence data) {
+      return new Token<>(data.toString(), createLocation());
+    }
   }
   
-  private Block block;
+  private Lambda lambda;
   
   @Override
   public void acceptScript() {
@@ -80,7 +84,8 @@ public class ASTBuilder implements GrammarEvaluator {
   }
   @Override
   public void script(List<Expr> expr_star_opt) {
-    block = new Block(block(expr_star_opt), new Location(1, 1));
+    Location location = new Location(1, 1);
+    lambda = new Lambda(Collections.emptyList(), new Block(block(expr_star_opt), location), location);
   }
   
   @Override
@@ -106,6 +111,11 @@ public class ASTBuilder implements GrammarEvaluator {
 
   @Override
   public Expr instr_expr(Expr expr) {
+    return expr;
+  }
+  @Override
+  public Expr instr_doc_expr(List<Token<String>> doc_plus, Expr expr) {
+    expr.setDocComment(doc_plus.stream().map(Token<String>::getValue).collect(Collectors.joining()));
     return expr;
   }
   @Override
@@ -155,18 +165,24 @@ public class ASTBuilder implements GrammarEvaluator {
     return block_param_block(colon, block);
   }
   @Override
-  public Expr expr_lambda(List<Token<String>> id_plus, Location colon, List<Expr> block) {
-    return block_param_lambda(id_plus.get(0).getLocation(), id_plus, colon, block); 
+  public Expr expr_lambda(List<Parameter> parameter_plus, Location colon, List<Expr> block) {
+    return block_param_lambda(parameter_plus.get(0).getLocation(), parameter_plus, colon, block); 
   }
   @Override
   public Lambda block_param_block(Location colon, List<Expr> block) {
     return new Lambda(Collections.emptyList(), new Block(block, colon), colon);
   }
   @Override
-  public Lambda block_param_lambda(Location pipe, List<Token<String>> id_star, Location colon, List<Expr> block) {
-    return new Lambda(id_star.stream().map(Token<String>::getValue).collect(Collectors.toList()),
-        new Block(block, colon),
-        pipe);
+  public Parameter parameter_id(Token<String> id) {
+    return new Parameter(id.getValue(), null, id.getLocation());
+  }
+  @Override
+  public Parameter parameter_hint_id(Token<String> name, Token<String> id) {
+    return new Parameter(id.getValue(), new VarAccess(name.getValue(), name.getLocation()), id.getLocation());
+  }
+  @Override
+  public Lambda block_param_lambda(Location pipe, List<Parameter> parameter_star, Location colon, List<Expr> block) {
+    return new Lambda(parameter_star, new Block(block, colon), pipe);
   }
   
   @Override

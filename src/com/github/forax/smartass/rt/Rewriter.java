@@ -24,6 +24,7 @@ import com.github.forax.smartass.ast.If;
 import com.github.forax.smartass.ast.Lambda;
 import com.github.forax.smartass.ast.Literal;
 import com.github.forax.smartass.ast.MethodCall;
+import com.github.forax.smartass.ast.Parameter;
 import com.github.forax.smartass.ast.Stop;
 import com.github.forax.smartass.ast.VarAccess;
 import com.github.forax.smartass.ast.VarAssignment;
@@ -37,24 +38,33 @@ public class Rewriter {
   static final String BSM_INT_SIG =
       MethodType.methodType(CallSite.class, Lookup.class, String.class, MethodType.class, int.class).toMethodDescriptorString();
   
+  static class ProtoFun {
+    final List<String> freeVars;
+    final Lambda lambda;
+
+    ProtoFun(List<String> freeVars, Lambda lambda) {
+      this.freeVars = Objects.requireNonNull(freeVars);
+      this.lambda = Objects.requireNonNull(lambda);
+    }
+  }
   
   static class Env {
-    final Script script;
+    private final ConstantDictionary dictionary;
     private final MethodVisitor mv;
     private final HashMap<String, Integer> slotMap;
     
-    private Env(Script script, MethodVisitor mv, HashMap<String, Integer> slotMap) {
-      this.script = script;
+    private Env(ConstantDictionary dictionary, MethodVisitor mv, HashMap<String, Integer> slotMap) {
+      this.dictionary = dictionary;
       this.mv = mv;
       this.slotMap = slotMap;
     }
     
-    Env(Script script, MethodVisitor mv) {
-      this(script, mv, new HashMap<>());
+    Env(ConstantDictionary dictionnary, MethodVisitor mv) {
+      this(dictionnary, mv, new HashMap<>());
     }
     
     Env newEnv() {
-      return new Env(script, mv, new HashMap<>(slotMap));
+      return new Env(dictionary, mv, new HashMap<>(slotMap));
     }
     
     public Integer lookupSlotOrNull(String name) {
@@ -90,7 +100,7 @@ public class Rewriter {
     public void emitIndy(String bsmName, String name, String desc, Object constObject) {
       mv.visitInvokeDynamicInsn(name, desc,
           new Handle(H_INVOKESTATIC, INTERNAL_NAME, bsmName, BSM_INT_SIG),
-          script.dictionnary.intern(constObject));
+          dictionary.intern(constObject));
     }
     
     public void emitLineNumber(int lineNumber) {
@@ -164,8 +174,7 @@ public class Rewriter {
                 env.emitVar(ALOAD, slotOrNull);
               }
             }
-            Function function = new Function(env.script, freeVars, lambda.getParameters(), lambda.getBlock());
-            env.emitIndy("bsm_lambda", "lambda", desc(freeVars.size()), function);
+            env.emitIndy("bsm_lambda", "lambda", desc(freeVars.size()), new ProtoFun(freeVars, lambda));
           })
           .when(MethodCall.class, (call, env) -> {
             visit(call.getReceiver(), env);
@@ -273,8 +282,8 @@ public class Rewriter {
           .when(Lambda.class, (lambda, env) -> {
             VarEnv newEnv = env.newEnv();
             newEnv.localVars.add("this");  // implicit this
-            for(String parameter: lambda.getParameters()) {
-              newEnv.localVars.add(parameter);
+            for(Parameter parameter: lambda.getParameters()) {
+              newEnv.localVars.add(parameter.getName());
             }
             visitFreeVar(lambda.getBlock(), newEnv);
           })
@@ -306,7 +315,7 @@ public class Rewriter {
           })
           ;
   
-  public static byte[] rewrite(Script script, Function function, String className) {
+  public static byte[] rewrite(Function function, String className, ConstantDictionary dictionary) {
     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS|ClassWriter.COMPUTE_FRAMES);
     writer.visit(V1_8, ACC_PUBLIC|ACC_SUPER, className.replace('.',  '/'), null, "java/lang/Object", null);
     writer.visitSource("script", null);
@@ -315,7 +324,7 @@ public class Rewriter {
     List<String> parameters = function.getParameters();
     
     MethodVisitor mv = writer.visitMethod(ACC_PUBLIC|ACC_STATIC, "lambda", desc(freeVars.size() + 1 + parameters.size()), null, null);
-    Env env = new Env(script, mv);
+    Env env = new Env(dictionary, mv);
     for(String freeVar: freeVars) {
       env.registerSlot(freeVar);
     }
@@ -324,7 +333,7 @@ public class Rewriter {
       env.registerSlot(parameter);
     }
     mv.visitCode();
-    VISITOR.visit(function.getBlock(), env);
+    VISITOR.visit(function.getLambda().getBlock(), env);
     mv.visitInsn(ARETURN);
     mv.visitMaxs(-1, -1);
     mv.visitEnd();
