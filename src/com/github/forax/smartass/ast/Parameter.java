@@ -4,9 +4,9 @@ import java.util.Objects;
 
 public class Parameter extends Locatable {
   private final String name;
-  private final Expr typeHint;
+  private final String typeHint;
   
-  public Parameter(String name, Expr typeHint, Location location) {
+  public Parameter(String name, String typeHint, Location location) {
     super(location);
     this.name = Objects.requireNonNull(name);
     this.typeHint = typeHint;
@@ -15,7 +15,7 @@ public class Parameter extends Locatable {
   public String getName() {
     return name;
   }
-  public Expr getTypeHintOptional() {
+  public String getTypeHintOptional() {
     return typeHint;
   }
 }

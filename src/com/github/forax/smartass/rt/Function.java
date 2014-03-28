@@ -9,19 +9,21 @@ import com.github.forax.smartass.ast.Lambda;
 public class Function {
   private final List<String> freeVars;
   private final List<String> parameters;
+  private final List<Klass> typeHints;
   private final Lambda lambda;
   private final java.util.function.Function<Function, MethodHandle> createTarget;
   private MethodHandle target;
 
-  Function(List<String> freeVars, List<String> parameters, Lambda lambda, java.util.function.Function<Function, MethodHandle> createTarget) {
+  Function(List<String> freeVars, List<String> parameters, List<Klass> typeHints, Lambda lambda, java.util.function.Function<Function, MethodHandle> createTarget) {
     this.freeVars = Objects.requireNonNull(freeVars);
     this.parameters = Objects.requireNonNull(parameters);
+    this.typeHints = Objects.requireNonNull(typeHints);
     this.lambda = lambda;
     this.createTarget = Objects.requireNonNull(createTarget);
   }
   
-  Function(Script script, List<String> freeVars, List<String> parameters, Lambda lambda) {
-    this(freeVars, parameters, lambda, script::createFunctionMH);
+  Function(Script script, List<String> freeVars, List<String> parameters, List<Klass> typeHints, Lambda lambda) {
+    this(freeVars, parameters, typeHints, lambda, script::createFunctionMH);
   }
   
   @Override
@@ -45,6 +47,9 @@ public class Function {
   }
   public List<String> getParameters() {
     return parameters;
+  }
+  public List<Klass> getTypeHints() {
+    return typeHints;
   }
   public Lambda getLambda() {
     return lambda;

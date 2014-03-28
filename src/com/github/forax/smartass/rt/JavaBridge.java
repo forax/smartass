@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.stream.Collectors;import java.util.stream.IntStream;
 
 class JavaBridge {
@@ -53,7 +54,7 @@ class JavaBridge {
       
       //System.out.println("register field " + field.getName());
       staticKlass.getMethodMap().put(field.getName(),
-          new Function(Collections.emptyList(), Collections.emptyList(), null,
+          new Function(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null,
               fun -> {
                 MethodHandle mh;
                 try {
@@ -72,8 +73,10 @@ class JavaBridge {
     classMap.forEach((name, methods) -> {
       
       Method method = methods.get(0);
+      List<String> params = Arrays.stream(method.getParameters()).map(Parameter::getName).collect(Collectors.toList());
       Function function = new Function(Collections.emptyList(),
-          Arrays.stream(method.getParameters()).map(Parameter::getName).collect(Collectors.toList()),
+          params,
+          Collections.nCopies(params.size(), null),  // Java methods are untyped ?
           null,
           fun -> {
             if (methods.size() == 1) {

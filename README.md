@@ -11,9 +11,9 @@ To achieve that goal SmartAss has a handful of concepts.
   
   * Variables are dynamically typed *and* locally scoped.
   
-  * All values are objects.
+  * Classes are not mutable, environment is stable (but not side effect free).
   
-  * Guarantee that the entropy of the behaviors can only grow (but not side effect free)
+  * All values are objects.
     
   
   

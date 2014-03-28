@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -83,6 +84,37 @@ public class Script {
       }
     }
     return klasses.get(o.getClass());
+  }
+  
+  private Klass resolveKlass(String name) {
+    Klass klass = klassCache.get(name);
+    if (klass != null) {  // known klass ?
+      return klass;
+    }
+    if (name.indexOf('.') == -1) { // not a Java class ?
+      return null;
+    }
+    try {
+      Class<?> type = classLoader.loadClass(name);
+      return klasses.get(type);
+    } catch (ClassNotFoundException e) {
+      return null;
+    }
+  }
+  
+  private List<Klass> resolveParameterTypeHints(List<Parameter> parameters) {
+    Klass[] klasses = new Klass[parameters.size()];
+    for(int i = 0; i < klasses.length; i++) {
+      String typeHint = parameters.get(i).getTypeHintOptional();
+      if (typeHint != null) {
+        Klass klass = resolveKlass(typeHint);
+        if (klass == null) {
+          throw new LinkageError("invalid type name " + typeHint);
+        }
+        klasses[i] = klass;
+      }
+    }
+    return Arrays.asList(klasses);
   }
   
   class ScriptClassLoader extends ClassLoader {
@@ -175,21 +207,9 @@ public class Script {
     Script script = classLoader.getScript();
     
     String symbol = (String)script.dictionary.getConstantAt(constantIndex);
-    Object constant = symbol;
+    Klass klass = script.resolveKlass(symbol);
+    Object constant = (klass != null)? klass: symbol;
     
-    Klass klass = script.klassCache.get(symbol);
-    if (klass != null) {  // known klass ?
-      constant = klass;
-    } else {
-      if (symbol.indexOf('.') != -1) { // a Java class ?
-        try {
-          Class<?> type = classLoader.loadClass(symbol);
-          constant = script.klasses.get(type);
-        } catch (ClassNotFoundException e) {
-          // do nothing
-        }
-      }
-    }
     //System.out.println("resolved symbol " + symbol + " as " + constant.getClass());
     return new ConstantCallSite(MethodHandles.constant(Object.class, constant));
   }
@@ -235,12 +255,16 @@ public class Script {
     Script script = classLoader.getScript();
     ProtoFun protoFun = (ProtoFun)script.dictionary.getConstantAt(constantIndex);
     
-    Function function = new Function(script, protoFun.freeVars,
-        protoFun.lambda.getParameters().stream().map(Parameter::getName).collect(Collectors.toList()),
-        protoFun.lambda);
+    List<String> freeVars = protoFun.freeVars;
+    Lambda lambda = protoFun.lambda;
+    List<Parameter> parameters = lambda.getParameters();
+    Function function = new Function(script, freeVars,
+        parameters.stream().map(Parameter::getName).collect(Collectors.toList()),
+        script.resolveParameterTypeHints(parameters),
+        lambda);
     
     // no free variables, always return the same function
-    if (function.getFreeVars().isEmpty()) {
+    if (freeVars.isEmpty()) {
       return new ConstantCallSite(MethodHandles.constant(Object.class, function));
     }
     return new ConstantCallSite(LAMBDA.bindTo(function).asCollector(Object[].class, type.parameterCount()));
@@ -249,7 +273,7 @@ public class Script {
   @SuppressWarnings("unused")  // called from a method handle
   private static Object lambda(Function function, Object[] boundValues) {
     // create a new lambda with the same values
-    return new Function(function.getFreeVars(), function.getParameters(), function.getLambda(),
+    return new Function(function.getFreeVars(), function.getParameters(), function.getTypeHints(), function.getLambda(),
          __ -> MethodHandles.insertArguments(function.getTarget(), 0, boundValues)
     );
   }
@@ -346,7 +370,7 @@ public class Script {
   @MethodInfo(hidden=true)
   public Object eval(Lambda lambda) throws Throwable {
     Objects.requireNonNull(lambda);
-    Function main = new Function(this, Collections.emptyList(), Collections.emptyList(), lambda);
+    Function main = new Function(this, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), lambda);
     return main.getTarget().invokeExact((Object)this);
   }
   
@@ -379,7 +403,7 @@ public class Script {
   @SuppressWarnings("static-method")
   public Function fieldAccessor(String name) {
     Objects.requireNonNull(name);
-    return new Function(Collections.emptyList(), Collections.emptyList(), null,
+    return new Function(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null,
         fun -> Script.bsm_field_get(null /*unused*/, name, null /*unused*/).dynamicInvoker()
         );
   }
@@ -391,6 +415,7 @@ public class Script {
     }
     return new Function(Collections.emptyList(),
         IntStream.range(0, parameterCount).mapToObj(value -> "arg" + value).collect(Collectors.toList()),
+        Collections.nCopies(parameterCount, null),
         null,
         fun -> METHOD_CALL.bindTo(this).asCollector(Object[].class, parameterCount)
         );

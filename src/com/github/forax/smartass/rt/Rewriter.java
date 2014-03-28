@@ -114,6 +114,13 @@ public class Rewriter {
     return MethodType.genericMethodType(parameterCount).toMethodDescriptorString();
   }
   
+  private static String unquote(String name) {
+    if (name.charAt(0) != '\'') {
+      return name;
+    }
+    return name.substring(1, name.length() - 1);  
+  }
+  
   static void visit(Expr expr, Env env) {
     VISITOR.visit(expr, env);
   } // with

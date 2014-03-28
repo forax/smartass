@@ -76,6 +76,13 @@ public class ASTBuilder implements GrammarEvaluator {
     }
   }
   
+  private static String unquote(String name) {
+    if (name.charAt(0) != '\'') {
+      return name;
+    }
+    return name.substring(1, name.length() - 1);  
+  }
+  
   private Lambda lambda;
   
   @Override
@@ -178,7 +185,7 @@ public class ASTBuilder implements GrammarEvaluator {
   }
   @Override
   public Parameter parameter_hint_id(Token<String> name, Token<String> id) {
-    return new Parameter(id.getValue(), new VarAccess(name.getValue(), name.getLocation()), id.getLocation());
+    return new Parameter(id.getValue(), unquote(name.getValue()), id.getLocation());
   }
   @Override
   public Lambda block_param_lambda(Location pipe, List<Parameter> parameter_star, Location colon, List<Expr> block) {
