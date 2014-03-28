@@ -1,0 +1,14 @@
+require('samples/core.sms')
+
+result = (:
+  2
+  + 3
+)()
+print(result)
+
+result2 = (:
+  2 +
+  3
+)()
+print(result2)
+

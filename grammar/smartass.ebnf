@@ -137,6 +137,7 @@ productions:
       
       | '!' expr                               [unary]        { expr_unary_not }
       | '-' expr                               [unary]        { expr_unary_neg }
+      | '+' expr                               [unary]        { expr_unary_plus }
       | expr '+' expr                          [plus]         { expr_binary_add }
       | expr '-' expr                          [plus]         { expr_binary_sub }
       | expr '*' expr                          [star]         { expr_binary_mul }

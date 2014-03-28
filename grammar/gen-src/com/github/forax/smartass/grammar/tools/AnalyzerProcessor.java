@@ -568,6 +568,12 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
+                    case expr_unary_plus: { // not synthetic
+                                 Expr expr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.expr_unary_plus(expr));
+                      
+          }
+          return;
                     case expr_binary_add: { // not synthetic
                                  Expr expr2=(Expr)stack.pop_Object();
                                           Expr expr=(Expr)stack.pop_Object();

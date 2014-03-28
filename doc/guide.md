@@ -49,6 +49,13 @@ SmartAss Reference Guide
    and not 5 because for the end of line after '2', '2' is
    a valid expression.
    
+   And for
+   ```
+   2 +
+   3
+   ```
+   the result value is 5 because 2 + is not a valid expression.
+   
    
  * if, while, return and throw
  

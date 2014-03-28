@@ -157,6 +157,11 @@ public interface GrammarEvaluator {
    */
   public Expr expr_unary_neg(Expr expr);
   /** This methods is called after the reduction of the non terminal expr
+   *  by the grammar production expr_unary_plus.
+   *  <code>expr ::= plus expr</code>
+   */
+  public Expr expr_unary_plus(Expr expr);
+  /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_binary_add.
    *  <code>expr ::= expr plus expr</code>
    */

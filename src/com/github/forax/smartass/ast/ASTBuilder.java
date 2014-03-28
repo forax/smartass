@@ -225,6 +225,10 @@ public class ASTBuilder implements GrammarEvaluator {
   public Expr expr_unary_not(Expr expr) {
     return op(expr, "!");
   }
+  @Override
+  public Expr expr_unary_plus(Expr expr) {
+    return expr;
+  }
 
   @Override
   public Expr expr_binary_add(Expr expr, Expr expr2) {
