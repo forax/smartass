@@ -1,13 +1,15 @@
 package com.github.forax.smartass.ast;
 
+import java.util.Objects;
+
 public class While extends Locatable implements Expr {
   private final Expr condition;
   private final Block block;
 
-  public While(Expr condition, Block block, int lineNumber) {
+  While(Expr condition, Block block, int lineNumber) {
     super(lineNumber);
-    this.condition = condition;
-    this.block = block;
+    this.condition = Objects.requireNonNull(condition);
+    this.block = Objects.requireNonNull(block);
   }
   
   public Expr getCondition() {

@@ -6,7 +6,7 @@ public class Parameter extends Locatable {
   private final String name;
   private final String typeHint;
   
-  public Parameter(String name, String typeHint, int lineNumber) {
+  Parameter(String name, String typeHint, int lineNumber) {
     super(lineNumber);
     this.name = Objects.requireNonNull(name);
     this.typeHint = typeHint;

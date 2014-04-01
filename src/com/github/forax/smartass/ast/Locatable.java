@@ -13,7 +13,7 @@ abstract class Locatable {
   public int getLineNumber() {
     return lineNumber;
   }
-  public String getOptionalDocComment() {
+  public String getDocCommentOptional() {
     return docComment;
   }
   public void setDocComment(String docComment) {

@@ -2,6 +2,6 @@ package com.github.forax.smartass.ast;
 
 public interface Expr {
   public int getLineNumber();
-  public String getOptionalDocComment();
+  public String getDocCommentOptional();
   public void setDocComment(String docComment);
 }

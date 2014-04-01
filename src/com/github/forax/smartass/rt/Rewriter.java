@@ -185,7 +185,7 @@ public class Rewriter {
               visit(expr, env);
             }
             int argCount = 2 + call.getArguments().size();
-            Lambda lambdaOrNull = call.getLambdaOrNull();
+            Lambda lambdaOrNull = call.getLambdaOptional();
             if (lambdaOrNull != null) {
               visit(lambdaOrNull, env);
               argCount++;
@@ -214,7 +214,7 @@ public class Rewriter {
             Label end = new Label();
             env.emitJump(GOTO, end);
             env.emitLabel(notTrue);
-            Block falseBlock = _if.getFalseBlock();
+            Block falseBlock = _if.getFalseBlockOptional();
             if (falseBlock != null) {
               visit(falseBlock, env.newEnv());
             } else {
@@ -294,9 +294,9 @@ public class Rewriter {
             for(Expr argument: call.getArguments()) {
               visitFreeVar(argument, env);
             }
-            Lambda lambdaOrNull = call.getLambdaOrNull();
-            if (lambdaOrNull != null) {
-              visitFreeVar(lambdaOrNull, env);
+            Lambda lambda = call.getLambdaOptional();
+            if (lambda != null) {
+              visitFreeVar(lambda, env);
             }
           })
           .when(While.class, (loop, env) -> {
@@ -306,7 +306,7 @@ public class Rewriter {
           .when(If.class, (_if, env) -> {
             visitFreeVar(_if.getCondition(), env);
             visitFreeVar(_if.getTrueBlock(), env.newEnv());
-            Block falseBlock = _if.getFalseBlock();
+            Block falseBlock = _if.getFalseBlockOptional();
             if (falseBlock != null) {
               visitFreeVar(falseBlock, env.newEnv());
             }

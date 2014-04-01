@@ -1,14 +1,16 @@
 package com.github.forax.smartass.ast;
 
+import java.util.Objects;
+
 public class If extends Locatable implements Expr {
   private final Expr condition;
   private final Block trueBlock;
   private final Block falseBlock;
 
-  public If(Expr condition, Block trueBlock, Block falseBlock, int lineNmber) {
+  If(Expr condition, Block trueBlock, Block falseBlock, int lineNmber) {
     super(lineNmber);
-    this.condition = condition;
-    this.trueBlock = trueBlock;
+    this.condition = Objects.requireNonNull(condition);
+    this.trueBlock = Objects.requireNonNull(trueBlock);
     this.falseBlock = falseBlock;
   }
 
@@ -18,7 +20,7 @@ public class If extends Locatable implements Expr {
   public Block getTrueBlock() {
     return trueBlock;
   }
-  public Block getFalseBlock() {
+  public Block getFalseBlockOptional() {
     return falseBlock;
   }
 }
