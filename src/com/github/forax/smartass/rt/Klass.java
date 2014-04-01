@@ -55,6 +55,9 @@ public class Klass {
       throw new LinkageError("a method " + name + " already exist in klass " + this.name);
     }
     methodMap.put(name, body);
+    if (body.getNameHint() == null) {
+      body.setNameHint(name);
+    }
     return body;
   }
   

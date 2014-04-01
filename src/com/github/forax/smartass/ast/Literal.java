@@ -3,8 +3,8 @@ package com.github.forax.smartass.ast;
 public class Literal extends Locatable implements Expr {
   private final String value;
 
-  Literal(String value, Location location) {
-    super(location);
+  Literal(String value, int lineNumber) {
+    super(lineNumber);
     this.value = value;
   }
 

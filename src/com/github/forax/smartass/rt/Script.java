@@ -13,6 +13,7 @@ import java.lang.invoke.MethodType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -143,15 +144,35 @@ public class Script {
     }
   }
   
+  private static boolean validJavaIdentifier(String id) {
+    int length = id.length();
+    if (length == 0) {
+      return false;
+    }
+    if (!Character.isJavaIdentifierStart(id.charAt(0))) {
+      return false;
+    }
+    for(int i = 1; i < length; i++) {
+      if (!Character.isJavaIdentifierPart(id.charAt(0))) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
   MethodHandle createFunctionMH(Function function) {
     int constantIndex = dictionary.intern(function); //FIXME, don't use the dictionary to store a function
-    String className = "do.$" + constantIndex;  
-    byte[] bytecodes = Rewriter.rewrite(function, className, dictionary);
+    String className = "fun" + constantIndex;
+    String nameHint = function.getNameHint();
+    if (nameHint == null || !validJavaIdentifier(nameHint)) {
+      nameHint = "lambda";
+    }
+    byte[] bytecodes = Rewriter.rewrite(function, nameHint, className, dictionary);
     CheckClassAdapter.verify(new ClassReader(bytecodes), false, new PrintWriter(System.out));
     Class<?> clazz = classLoader.defineClasse(className, bytecodes);
     MethodHandle target;
     try {
-      target = MethodHandles.publicLookup().findStatic(clazz, "lambda",
+      target = MethodHandles.publicLookup().findStatic(clazz, nameHint,
           MethodType.genericMethodType(function.getFreeVars().size() + 1 + function.getParameters().size()));
     } catch (NoSuchMethodException | IllegalAccessException e) {
       throw new AssertionError(e);
@@ -160,7 +181,7 @@ public class Script {
   }
   
   MethodHandle createKlassMH(Klass klass) {
-    String className = "class." + klass.getName();
+    String className = "class$" + klass.getName();
     String internalName = className.replace('.', '/');
     
     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS|ClassWriter.COMPUTE_FRAMES);
@@ -371,6 +392,7 @@ public class Script {
   public Object eval(Lambda lambda) throws Throwable {
     Objects.requireNonNull(lambda);
     Function main = new Function(this, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), lambda);
+    main.setNameHint("main");
     return main.getTarget().invokeExact((Object)this);
   }
   
@@ -383,18 +405,23 @@ public class Script {
     Objects.requireNonNull(symbol);
     Objects.requireNonNull(body);
     Klass klass;
+    String name;
     List<String> parameters = body.getParameters();
     if (symbol instanceof String) { // new class !
-      String name = (String)symbol;
+      name = (String)symbol;
       klass = Klass.create(name, null, parameters);
       klassCache.put(name, klass);
     } else {
       klass = (Klass)symbol;
+      name = klass.getName();
     }
     Object[] args = new Object[1 + parameters.size()];
     args[0] = klass;
     for(int i = 1; i < args.length; i++) {
       args[i] = fieldAccessor(parameters.get(i - 1));
+    }
+    if (body.getNameHint() == null) {
+      body.setNameHint(klass.getName().replace('.',  '_') + "\\init");
     }
     body.getTarget().invokeWithArguments(args);
     return klass;
@@ -423,8 +450,9 @@ public class Script {
   
   public Object require(String filename) throws Throwable {
     Lambda lambda;
-    try(Reader reader = Files.newBufferedReader(Paths.get(filename))) {
-      lambda = ASTBuilder.parseScript(reader);
+    Path path = Paths.get(filename);
+    try(Reader reader = Files.newBufferedReader(path)) {
+      lambda = ASTBuilder.parseScript(reader, path);
     }
     return eval(lambda);
   }

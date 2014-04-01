@@ -8,8 +8,8 @@ public class MethodCall extends Locatable implements Expr {
   private final List<Expr> arguments;
   private final Lambda lambdaOrNull;
 
-  MethodCall(Expr receiver, Expr selector, List<Expr> arguments, Lambda lambdaOrNull, Location location) {
-    super(location);
+  MethodCall(Expr receiver, Expr selector, List<Expr> arguments, Lambda lambdaOrNull, int lineNumber) {
+    super(lineNumber);
     this.receiver = receiver;
     this.selector = selector;
     this.arguments = arguments;

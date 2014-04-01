@@ -1,11 +1,13 @@
 package com.github.forax.smartass.ast;
 
 import java.io.Reader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.github.forax.smartass.grammar.tools.Analyzers;
@@ -16,10 +18,11 @@ import fr.umlv.tatoo.runtime.buffer.impl.LocationTracker;
 import fr.umlv.tatoo.runtime.buffer.impl.ReaderWrapper;
 
 public class ASTBuilder implements GrammarEvaluator {
-  public static Lambda parseScript(Reader reader) {
+  public static Lambda parseScript(Reader reader, Path path) {
+    Objects.requireNonNull(reader);
     LocationTracker tracker = new LocationTracker();
     ReaderWrapper buffer = new ReaderWrapper(reader, tracker);
-    ASTBuilder astBuilder = new ASTBuilder();
+    ASTBuilder astBuilder = new ASTBuilder(path);
     Analyzers.run(buffer, new TerminalBuilder(tracker), astBuilder, null, null);
     return astBuilder.lambda;
   }
@@ -31,8 +34,8 @@ public class ASTBuilder implements GrammarEvaluator {
       this.tracker = tracker;
     }
 
-    private Location createLocation() {
-      return new Location(1 + tracker.getLineNumber(), tracker.getColumnNumber());
+    private int getLineNumber() {
+      return 1 + tracker.getLineNumber();
     }
     
     @Override
@@ -41,38 +44,38 @@ public class ASTBuilder implements GrammarEvaluator {
     }
     
     @Override
-    public Location pipe(CharSequence data) {
-      return createLocation(); 
+    public int pipe(CharSequence data) {
+      return getLineNumber(); 
     }
     @Override
-    public Location colon(CharSequence data) {
-      return createLocation();
+    public int colon(CharSequence data) {
+      return getLineNumber();
     }
     @Override
-    public Location lopt(CharSequence data) {
-      return createLocation(); 
+    public int lopt(CharSequence data) {
+      return getLineNumber(); 
     }
     @Override
-    public Location lcurl(CharSequence data) {
-      return createLocation();
+    public int lcurl(CharSequence data) {
+      return getLineNumber();
     }
 
     @Override
     public Token<String> text(CharSequence data) {
       // the quotes will be removed in the rewriter
-      return new Token<>(data.toString(), createLocation());
+      return new Token<>(data.toString(), getLineNumber());
     }
     @Override
     public Token<String> id(CharSequence data) {
-      return new Token<>(data.toString(), createLocation());
+      return new Token<>(data.toString(), getLineNumber());
     }
     @Override
     public Token<String> value(CharSequence data) {
-      return new Token<>(data.toString(), createLocation());
+      return new Token<>(data.toString(), getLineNumber());
     }
     @Override
     public Token<String> doc(CharSequence data) {
-      return new Token<>(data.toString(), createLocation());
+      return new Token<>(data.toString(), getLineNumber());
     }
   }
   
@@ -83,7 +86,12 @@ public class ASTBuilder implements GrammarEvaluator {
     return name.substring(1, name.length() - 1);  
   }
   
+  private final Path path;
   private Lambda lambda;
+  
+  private ASTBuilder(Path path) {
+    this.path = path;
+  }
   
   @Override
   public void acceptScript() {
@@ -91,8 +99,7 @@ public class ASTBuilder implements GrammarEvaluator {
   }
   @Override
   public void script(List<Expr> expr_star_opt) {
-    Location location = new Location(1, 1);
-    lambda = new Lambda(Collections.emptyList(), new Block(block(expr_star_opt), location), location);
+    lambda = new Lambda(Collections.emptyList(), new Block(block(expr_star_opt), 1), path, 1);
   }
   
   @Override
@@ -127,11 +134,11 @@ public class ASTBuilder implements GrammarEvaluator {
   }
   @Override
   public Expr instr_return(Expr expr) {
-    return new Stop(Stop.Kind.RETURN, expr, expr.getLocation());
+    return new Stop(Stop.Kind.RETURN, expr, expr.getLineNumber());
   }
   @Override
   public Expr instr_throw(Expr expr) {
-    return new Stop(Stop.Kind.THROW, expr, expr.getLocation());
+    return new Stop(Stop.Kind.THROW, expr, expr.getLineNumber());
   }
   
   @Override
@@ -150,72 +157,72 @@ public class ASTBuilder implements GrammarEvaluator {
   
   @Override
   public Expr expr_value(Token<String> value) {
-    return new Literal(value.getValue(), value.getLocation());
+    return new Literal(value.getValue(), value.getLineNumber());
   }
 
   @Override
   public Expr expr_var_access(Token<String> id) {
-    return new VarAccess(id.getValue(), id.getLocation());
+    return new VarAccess(id.getValue(), id.getLineNumber());
   }
   @Override
   public Expr expr_var_assignment(Token<String> id, Expr expr) {
-    return new VarAssignment(id.getValue(), expr, id.getLocation());
+    return new VarAssignment(id.getValue(), expr, id.getLineNumber());
   }
 
   @Override
   public Expr expr_field_access(Token<String> id) {
-    return new FieldAccess(id.getValue(), id.getLocation());
+    return new FieldAccess(id.getValue(), id.getLineNumber());
   }
   
   @Override
-  public Expr expr_block(Location colon, List<Expr> block) {
+  public Expr expr_block(int colon, List<Expr> block) {
     return block_param_block(colon, block);
   }
   @Override
-  public Expr expr_lambda(List<Parameter> parameter_plus, Location colon, List<Expr> block) {
-    return block_param_lambda(parameter_plus.get(0).getLocation(), parameter_plus, colon, block); 
+  public Expr expr_lambda(List<Parameter> parameter_plus, int colon, List<Expr> block) {
+    return block_param_lambda(parameter_plus.get(0).getLineNumber(), parameter_plus, colon, block); 
   }
   @Override
-  public Lambda block_param_block(Location colon, List<Expr> block) {
-    return new Lambda(Collections.emptyList(), new Block(block, colon), colon);
+  public Lambda block_param_block(int colon, List<Expr> block) {
+    return new Lambda(Collections.emptyList(), new Block(block, colon), path, colon);
   }
   @Override
   public Parameter parameter_id(Token<String> id) {
-    return new Parameter(id.getValue(), null, id.getLocation());
+    return new Parameter(id.getValue(), null, id.getLineNumber());
   }
   @Override
   public Parameter parameter_hint_id(Token<String> name, Token<String> id) {
-    return new Parameter(id.getValue(), unquote(name.getValue()), id.getLocation());
+    return new Parameter(id.getValue(), unquote(name.getValue()), id.getLineNumber());
   }
   @Override
-  public Lambda block_param_lambda(Location pipe, List<Parameter> parameter_star, Location colon, List<Expr> block) {
-    return new Lambda(parameter_star, new Block(block, colon), pipe);
+  public Lambda block_param_lambda(int pipe, List<Parameter> parameter_star, int colon, List<Expr> block) {
+    return new Lambda(parameter_star, new Block(block, colon), path, pipe);
   }
   
   @Override
   public Expr expr_funcall(Expr expr, List<Expr> expr_star, Lambda lambda_optional) {
-    return new MethodCall(new VarAccess("this", expr.getLocation()), expr, expr_star, lambda_optional, expr.getLocation());
+    return new MethodCall(new VarAccess("this", expr.getLineNumber()), expr, expr_star, lambda_optional, expr.getLineNumber());
   }
   @Override
   public Expr expr_mthcall(Expr expr, Token<String> name, List<Expr> expr_star, Lambda lambda_optional) {
-    return new MethodCall(expr, expr_var_access(name), expr_star, lambda_optional, expr.getLocation());
+    return new MethodCall(expr, expr_var_access(name), expr_star, lambda_optional, expr.getLineNumber());
   }
   
   @Override
-  public Expr expr_while(Expr expr, Location colon, List<Expr> block) {
-    return new While(expr, new Block(block, colon), expr.getLocation());
+  public Expr expr_while(Expr expr, int colon, List<Expr> block) {
+    return new While(expr, new Block(block, colon), expr.getLineNumber());
   }
   @Override
-  public Expr expr_if(Expr expr, Location colon, List<Expr> block) {
-    return new If(expr, new Block(block, colon), null, expr.getLocation());
+  public Expr expr_if(Expr expr, int colon, List<Expr> block) {
+    return new If(expr, new Block(block, colon), null, expr.getLineNumber());
   }
   @Override
-  public Expr expr_ifelse(Expr expr, Location colon, List<Expr> block, Location colon2, List<Expr> block2) {
-    return new If(expr, new Block(block, colon), new Block(block2, colon2), expr.getLocation());
+  public Expr expr_ifelse(Expr expr, int colon, List<Expr> block, int colon2, List<Expr> block2) {
+    return new If(expr, new Block(block, colon), new Block(block2, colon2), expr.getLineNumber());
   }
   
   private static MethodCall op(Expr receiver, String selector, Expr... arguments) {
-    return new MethodCall(receiver, new VarAccess(selector, receiver.getLocation()), Arrays.asList(arguments), null, receiver.getLocation());
+    return new MethodCall(receiver, new VarAccess(selector, receiver.getLineNumber()), Arrays.asList(arguments), null, receiver.getLineNumber());
   }
   @Override
   public Expr expr_unary_neg(Expr expr) {

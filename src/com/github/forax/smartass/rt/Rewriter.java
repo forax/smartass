@@ -5,6 +5,7 @@ import static org.objectweb.asm.Opcodes.*;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -114,20 +115,13 @@ public class Rewriter {
     return MethodType.genericMethodType(parameterCount).toMethodDescriptorString();
   }
   
-  private static String unquote(String name) {
-    if (name.charAt(0) != '\'') {
-      return name;
-    }
-    return name.substring(1, name.length() - 1);  
-  }
-  
   static void visit(Expr expr, Env env) {
     VISITOR.visit(expr, env);
   } // with
   private static final VoidVisitor<Env> VISITOR =
       new VoidVisitor<Env>()
           .when(Block.class, (block, env) -> {
-            env.emitLineNumber(block.getLocation().getLineNumber());
+            env.emitLineNumber(block.getLineNumber());
             List<Expr> exprs = block.getExprs();
             if (exprs.isEmpty()) {
               env.emitInsn(ACONST_NULL);
@@ -135,12 +129,12 @@ public class Rewriter {
             }
             for(int i = 0; i < exprs.size() - 1; i++) {
               Expr expr = exprs.get(i);
-              env.emitLineNumber(expr.getLocation().getLineNumber());
+              env.emitLineNumber(expr.getLineNumber());
               visit(expr, env);
               env.emitInsn(POP);
             }
             Expr lastExpr = exprs.get(exprs.size() - 1);
-            env.emitLineNumber(lastExpr.getLocation().getLineNumber());
+            env.emitLineNumber(lastExpr.getLineNumber());
             visit(lastExpr, env);
           })
           .when(Literal.class, (expr, env) -> {
@@ -322,15 +316,16 @@ public class Rewriter {
           })
           ;
   
-  public static byte[] rewrite(Function function, String className, ConstantDictionary dictionary) {
+  static byte[] rewrite(Function function, String nameHint, String className, ConstantDictionary dictionary) {
     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS|ClassWriter.COMPUTE_FRAMES);
     writer.visit(V1_8, ACC_PUBLIC|ACC_SUPER, className.replace('.',  '/'), null, "java/lang/Object", null);
-    writer.visitSource("script", null);
+    Path path = function.getLambda().getPathOptional();
+    writer.visitSource((path == null)? "script": path.toString(), null);
     
     List<String> freeVars = function.getFreeVars();
     List<String> parameters = function.getParameters();
     
-    MethodVisitor mv = writer.visitMethod(ACC_PUBLIC|ACC_STATIC, "lambda", desc(freeVars.size() + 1 + parameters.size()), null, null);
+    MethodVisitor mv = writer.visitMethod(ACC_PUBLIC|ACC_STATIC, nameHint, desc(freeVars.size() + 1 + parameters.size()), null, null);
     Env env = new Env(dictionary, mv);
     for(String freeVar: freeVars) {
       env.registerSlot(freeVar);

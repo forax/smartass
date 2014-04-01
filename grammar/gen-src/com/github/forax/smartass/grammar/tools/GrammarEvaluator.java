@@ -2,7 +2,6 @@ package com.github.forax.smartass.grammar.tools;
 
 import com.github.forax.smartass.ast.Expr;
 import com.github.forax.smartass.ast.Lambda;
-import com.github.forax.smartass.ast.Location;
 import com.github.forax.smartass.ast.Parameter;
 import com.github.forax.smartass.ast.Token;
 import java.util.List;
@@ -70,12 +69,12 @@ public interface GrammarEvaluator {
    *  by the grammar production block_param_block.
    *  <code>block_param ::= colon block</code>
    */
-  public Lambda block_param_block(Location colon,List<Expr> block);
+  public Lambda block_param_block(int colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal block_param
    *  by the grammar production block_param_lambda.
    *  <code>block_param ::= pipe parameter_star_3 colon block</code>
    */
-  public Lambda block_param_lambda(Location pipe,List<Parameter> parameter_star,Location colon,List<Expr> block);
+  public Lambda block_param_lambda(int pipe,List<Parameter> parameter_star,int colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal parameter
    *  by the grammar production parameter_hint_id.
    *  <code>parameter ::= name id</code>
@@ -115,12 +114,12 @@ public interface GrammarEvaluator {
    *  by the grammar production expr_block.
    *  <code>expr ::= lpar colon block rpar</code>
    */
-  public Expr expr_block(Location colon,List<Expr> block);
+  public Expr expr_block(int colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_lambda.
    *  <code>expr ::= lpar parameter_plus_4 colon block rpar</code>
    */
-  public Expr expr_lambda(List<Parameter> parameter_plus,Location colon,List<Expr> block);
+  public Expr expr_lambda(List<Parameter> parameter_plus,int colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_funcall.
    *  <code>expr ::= expr lpar expr_star_5 block_param_optional_6 rpar</code>
@@ -135,17 +134,17 @@ public interface GrammarEvaluator {
    *  by the grammar production expr_while.
    *  <code>expr ::= _while lpar expr colon block rpar</code>
    */
-  public Expr expr_while(Expr expr,Location colon,List<Expr> block);
+  public Expr expr_while(Expr expr,int colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_if.
    *  <code>expr ::= _if lpar expr colon block rpar</code>
    */
-  public Expr expr_if(Expr expr,Location colon,List<Expr> block);
+  public Expr expr_if(Expr expr,int colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_ifelse.
    *  <code>expr ::= _if lpar expr colon block colon block rpar</code>
    */
-  public Expr expr_ifelse(Expr expr,Location colon,List<Expr> block,Location colon2,List<Expr> block2);
+  public Expr expr_ifelse(Expr expr,int colon,List<Expr> block,int colon2,List<Expr> block2);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_unary_not.
    *  <code>expr ::= bang expr</code>

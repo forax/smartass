@@ -12,6 +12,7 @@ public class Function {
   private final List<Klass> typeHints;
   private final Lambda lambda;
   private final java.util.function.Function<Function, MethodHandle> createTarget;
+  private String nameHint;
   private MethodHandle target;
 
   Function(List<String> freeVars, List<String> parameters, List<Klass> typeHints, Lambda lambda, java.util.function.Function<Function, MethodHandle> createTarget) {
@@ -30,7 +31,18 @@ public class Function {
   public String toString() {
     return "lambda" + parameters;
   }
- 
+  
+  String getNameHint() {
+    return nameHint;
+  }
+  void setNameHint(String nameHint) {
+    Objects.requireNonNull(nameHint);
+    if (this.nameHint != null) {
+      throw new IllegalStateException();
+    }
+    this.nameHint = nameHint;
+  }
+  
   MethodHandle getTarget() {
     if (target != null) {
       return target;

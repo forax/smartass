@@ -1,0 +1,7 @@
+require('samples/core.sms')
+
+def(boom:
+  throw 'boom !'
+)
+
+boom()

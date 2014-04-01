@@ -2,7 +2,6 @@ package com.github.forax.smartass.grammar.tools;
 
   import com.github.forax.smartass.ast.Expr;
     import com.github.forax.smartass.ast.Lambda;
-    import com.github.forax.smartass.ast.Location;
     import com.github.forax.smartass.ast.Parameter;
     import com.github.forax.smartass.ast.Token;
     import java.util.List;
@@ -119,8 +118,8 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
            }
                  case pipe: {
          data=dataViewer.view(buffer);
-                                  com.github.forax.smartass.ast.Location pipe=terminalEvaluator.pipe(data);
-                                      stack.push_Object(pipe);
+                                  int pipe=terminalEvaluator.pipe(data);
+                                      stack.push_int(pipe);
                                  return;
            }
                  case at: {
@@ -131,8 +130,8 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
            }
                  case colon: {
          data=dataViewer.view(buffer);
-                                  com.github.forax.smartass.ast.Location colon=terminalEvaluator.colon(data);
-                                      stack.push_Object(colon);
+                                  int colon=terminalEvaluator.colon(data);
+                                      stack.push_int(colon);
                                  return;
            }
                  case comma: {
@@ -152,8 +151,8 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
            }
                  case lopt: {
          data=dataViewer.view(buffer);
-                                  com.github.forax.smartass.ast.Location lopt=terminalEvaluator.lopt(data);
-                                      stack.push_Object(lopt);
+                                  int lopt=terminalEvaluator.lopt(data);
+                                      stack.push_int(lopt);
                                  return;
            }
                  case ropt: {
@@ -161,8 +160,8 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
            }
                  case lcurl: {
          data=dataViewer.view(buffer);
-                                  com.github.forax.smartass.ast.Location lcurl=terminalEvaluator.lcurl(data);
-                                      stack.push_Object(lcurl);
+                                  int lcurl=terminalEvaluator.lcurl(data);
+                                      stack.push_int(lcurl);
                                  return;
            }
                  case rcurl: {
@@ -327,7 +326,7 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           return;
                     case block_param_block: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
-                                          Location colon=(Location)stack.pop_Object();
+                                          int colon=stack.pop_int();
                                                 stack.push_Object(grammarEvaluator.block_param_block(colon,block));
                       
           }
@@ -360,9 +359,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           return;
                     case block_param_lambda: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
-                                          Location colon=(Location)stack.pop_Object();
+                                          int colon=stack.pop_int();
                                           List<Parameter> parameter_star_3=(List<Parameter>)stack.pop_Object();
-                                          Location pipe=(Location)stack.pop_Object();
+                                          int pipe=stack.pop_int();
                                                 stack.push_Object(grammarEvaluator.block_param_lambda(pipe,parameter_star_3,colon,block));
                       
           }
@@ -413,7 +412,7 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           return;
                     case expr_block: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
-                                          Location colon=(Location)stack.pop_Object();
+                                          int colon=stack.pop_int();
                                                 stack.push_Object(grammarEvaluator.expr_block(colon,block));
                       
           }
@@ -437,7 +436,7 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           return;
                     case expr_lambda: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
-                                          Location colon=(Location)stack.pop_Object();
+                                          int colon=stack.pop_int();
                                           List<Parameter> parameter_plus_4=(List<Parameter>)stack.pop_Object();
                                                 stack.push_Object(grammarEvaluator.expr_lambda(parameter_plus_4,colon,block));
                       
@@ -532,7 +531,7 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           return;
                     case expr_while: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
-                                          Location colon=(Location)stack.pop_Object();
+                                          int colon=stack.pop_int();
                                           Expr expr=(Expr)stack.pop_Object();
                                                 stack.push_Object(grammarEvaluator.expr_while(expr,colon,block));
                       
@@ -540,7 +539,7 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           return;
                     case expr_if: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
-                                          Location colon=(Location)stack.pop_Object();
+                                          int colon=stack.pop_int();
                                           Expr expr=(Expr)stack.pop_Object();
                                                 stack.push_Object(grammarEvaluator.expr_if(expr,colon,block));
                       
@@ -548,9 +547,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           return;
                     case expr_ifelse: { // not synthetic
                                  List<Expr> block2=(List<Expr>)stack.pop_Object();
-                                          Location colon2=(Location)stack.pop_Object();
+                                          int colon2=stack.pop_int();
                                           List<Expr> block=(List<Expr>)stack.pop_Object();
-                                          Location colon=(Location)stack.pop_Object();
+                                          int colon=stack.pop_int();
                                           Expr expr=(Expr)stack.pop_Object();
                                                 stack.push_Object(grammarEvaluator.expr_ifelse(expr,colon,block,colon2,block2));
                       
@@ -709,7 +708,7 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
               
               return;
                          case pipe:
-              stack.pop_Object();
+              stack.pop_int();
               return;
                          case at:
               
@@ -718,7 +717,7 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
               
               return;
                          case colon:
-              stack.pop_Object();
+              stack.pop_int();
               return;
                          case comma:
               
@@ -736,13 +735,13 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
               
               return;
                          case lopt:
-              stack.pop_Object();
+              stack.pop_int();
               return;
                          case ropt:
               
               return;
                          case lcurl:
-              stack.pop_Object();
+              stack.pop_int();
               return;
                          case rcurl:
               

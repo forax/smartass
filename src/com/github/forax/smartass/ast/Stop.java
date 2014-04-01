@@ -9,8 +9,8 @@ public class Stop extends Locatable implements Expr {
     THROW
   }
 
-  Stop(Kind kind, Expr expr, Location location) {
-    super(location);
+  Stop(Kind kind, Expr expr, int lineNumber) {
+    super(lineNumber);
     this.kind = kind;
     this.expr = expr;
   }

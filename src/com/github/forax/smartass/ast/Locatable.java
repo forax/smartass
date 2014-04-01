@@ -3,15 +3,15 @@ package com.github.forax.smartass.ast;
 import java.util.Objects;
 
 abstract class Locatable {
-  private final Location location;
+  private final int lineNumber;
   private String docComment;
 
-  Locatable(Location location) {
-    this.location = location;
+  Locatable(int lineNumber) {
+    this.lineNumber = lineNumber;
   }
   
-  public Location getLocation() {
-    return location;
+  public int getLineNumber() {
+    return lineNumber;
   }
   public String getOptionalDocComment() {
     return docComment;

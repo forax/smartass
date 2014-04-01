@@ -5,8 +5,8 @@ public class If extends Locatable implements Expr {
   private final Block trueBlock;
   private final Block falseBlock;
 
-  public If(Expr condition, Block trueBlock, Block falseBlock, Location location) {
-    super(location);
+  public If(Expr condition, Block trueBlock, Block falseBlock, int lineNmber) {
+    super(lineNmber);
     this.condition = condition;
     this.trueBlock = trueBlock;
     this.falseBlock = falseBlock;

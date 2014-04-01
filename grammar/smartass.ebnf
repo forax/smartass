@@ -6,7 +6,6 @@ imports:
   com.github.forax.smartass.ast.Block
   com.github.forax.smartass.ast.Expr
   com.github.forax.smartass.ast.Lambda
-  com.github.forax.smartass.ast.Location
   com.github.forax.smartass.ast.Parameter
   com.github.forax.smartass.ast.Token
   
@@ -69,10 +68,10 @@ types:
  'text': Token<String>
  'doc': Token<String>
  'value': Token<String>
- 'lopt': Location
- 'lcurl': Location
- 'pipe': Location
- 'colon': Location
+ 'lopt': int
+ 'lcurl': int
+ 'pipe': int
+ 'colon': int
  
  name: Token<String>
  expr: Expr
