@@ -41,7 +41,7 @@ public class Script {
   private final ScriptClassLoader classLoader = new ScriptClassLoader();
   final HashMap<String, Klass> klassCache = new HashMap<>();
   
-  private final Klass klassOfNull = Klass.create("null", null, Collections.emptyList());
+  private final Klass klassOfNull = Klass.create("null", null, Collections.emptyList(), new HashMap<>());
   final ThreadLocal<Klass> threadLocal = new ThreadLocal<>();
   private final ClassValue<Klass> klasses = new ClassValue<Klass>() {
     @Override
@@ -340,6 +340,7 @@ public class Script {
           throw new LinkageError("invalid selector " + selector + " of type " + selector.getClass());
         }
       }
+      klass.initialize();  // need to run klass initializers if they exist
       Function method = klass.getMethodMap().get(selector);
       if (method == null) {
         throw new LinkageError("no method '" + selector + "' defined on " + klass.getName());
@@ -412,26 +413,21 @@ public class Script {
     List<String> parameters = body.getParameters();
     if (symbol instanceof String) { // new class !
       name = (String)symbol;
-      klass = Klass.create(name, null, parameters);
-      klassCache.put(name, klass);
+      klass = Klass.create(name, null, parameters, new HashMap<>());
       klass.def("@init", new Function(Collections.emptyList(),
           parameters,
           body.getTypeHints(),
           null,
           fun -> createKlassMH(klass)));
+      klassCache.put(name, klass);
     } else {
       klass = (Klass)symbol;
       name = klass.getName();
     }
-    Object[] args = new Object[1 + parameters.size()];
-    args[0] = klass;
-    for(int i = 1; i < args.length; i++) {
-      args[i] = fieldAccessor(parameters.get(i - 1));
-    }
     if (body.getNameHint() == null) {
       body.setNameHint(klass.getName().replace('.',  '_') + "\\init");
     }
-    body.getTarget().invokeWithArguments(args);
+    klass.registerInitializer(this, body);  // delay initialization
     return klass;
   }
   

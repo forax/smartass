@@ -1,0 +1,18 @@
+require('samples/core.sms')
+
+script = this
+
+class(Hello | message:
+  script.print('start init')
+  
+  def(sayHello:
+    script.print('hello ' + @message)
+  )
+  
+  script.print('stop init')
+)
+
+print('create an Hello instance !')
+hello = Hello('world')
+hello.sayHello()
+
