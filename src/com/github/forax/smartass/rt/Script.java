@@ -329,19 +329,22 @@ public class Script {
     if (selector instanceof Function) {
       mh = ((Function)selector).getTarget();
     } else {
+      Klass klass;
       if (selector instanceof Klass) {
-        mh = ((Klass)selector).getTarget(this);
+        klass = (Klass)selector;
+        selector = "@init";
       } else {
         if (selector instanceof String) {
-          Function method = getKlass(args[0]).getMethodMap().get(selector);
-          if (method == null) {
-            throw new LinkageError("no method '" + selector + "' defined on " + getKlass(args[0]));
-          }
-          mh = method.getTarget();
+          klass = getKlass(args[0]);
         } else {
-          throw new LinkageError("invalid selector " + selector);
+          throw new LinkageError("invalid selector " + selector + " of type " + selector.getClass());
         }
       }
+      Function method = klass.getMethodMap().get(selector);
+      if (method == null) {
+        throw new LinkageError("no method '" + selector + "' defined on " + klass.getName());
+      }
+      mh = method.getTarget();
     }
     if (args.length != mh.type().parameterCount()) {
       throw new LinkageError("wrong number of arguments(" + args.length + ") to call " + selector + ' ' + mh.type());
@@ -411,6 +414,11 @@ public class Script {
       name = (String)symbol;
       klass = Klass.create(name, null, parameters);
       klassCache.put(name, klass);
+      klass.def("@init", new Function(Collections.emptyList(),
+          parameters,
+          body.getTypeHints(),
+          null,
+          fun -> createKlassMH(klass)));
     } else {
       klass = (Klass)symbol;
       name = klass.getName();

@@ -13,7 +13,6 @@ public class Klass {
   private final Klass staticKlass;
   private final LinkedHashMap<String, MethodHandle> fieldMap;
   private final HashMap<String, Function> methodMap = new HashMap<>();
-  private MethodHandle target;
   
   private Klass(String name, Klass staticKlass, LinkedHashMap<String, MethodHandle> fieldMap) {
     this.name = Objects.requireNonNull(name);
@@ -27,13 +26,6 @@ public class Klass {
       fieldMap.put(field, null);
     }
     return new Klass(name, staticKlass, fieldMap);
-  }
-  
-  MethodHandle getTarget(Script script) {
-    if (target != null) {
-      return target;
-    }
-    return target = script.createKlassMH(this);
   }
   
   Set<String> getFields() {

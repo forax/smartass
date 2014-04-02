@@ -3,6 +3,7 @@ package com.github.forax.smartass.rt;
 import java.lang.invoke.MethodHandle;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import com.github.forax.smartass.ast.Lambda;
 
@@ -29,7 +30,7 @@ public class Function {
   
   @Override
   public String toString() {
-    return "lambda" + parameters;
+    return ((nameHint != null)? nameHint: "lambda") + parameters.stream().collect(Collectors.joining(",", "(", ")"));
   }
   
   String getNameHint() {

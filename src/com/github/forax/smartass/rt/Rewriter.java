@@ -6,12 +6,13 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Handle;
@@ -164,7 +165,7 @@ public class Rewriter {
                 "(Ljava/lang/Object;)Ljava/lang/Object;");
           })
           .when(Lambda.class, (lambda, env) -> {
-            ArrayList<String> freeVars = new ArrayList<>();
+            LinkedHashSet<String> freeVars = new LinkedHashSet<>();
             visitFreeVar(lambda, new VarEnv(freeVars));
             for(Iterator<String> it = freeVars.iterator(); it.hasNext();) {
               String name = it.next();
@@ -175,7 +176,8 @@ public class Rewriter {
                 env.emitVar(ALOAD, slotOrNull);
               }
             }
-            env.emitIndy("bsm_lambda", "lambda", desc(freeVars.size()), new ProtoFun(freeVars, lambda));
+            env.emitIndy("bsm_lambda", "lambda", desc(freeVars.size()),
+                new ProtoFun(freeVars.stream().collect(Collectors.toList()), lambda));
           })
           .when(MethodCall.class, (call, env) -> {
             visit(call.getReceiver(), env);
@@ -238,14 +240,14 @@ public class Rewriter {
   
   static class VarEnv {
     final HashSet<String> localVars;
-    final ArrayList<String> freeVars;
+    final LinkedHashSet<String> freeVars;
     
-    private VarEnv(HashSet<String> localVars, ArrayList<String> freeVars) {
+    private VarEnv(HashSet<String> localVars, LinkedHashSet<String> freeVars) {
       this.localVars = localVars;
       this.freeVars = freeVars;
     }
     
-    public VarEnv(ArrayList<String> freeVars) {
+    public VarEnv(LinkedHashSet<String> freeVars) {
       this(new HashSet<>(), freeVars);
     }
     
