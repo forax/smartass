@@ -76,8 +76,8 @@ public class Rewriter {
     public int registerSlot(String name) {
       Objects.requireNonNull(name);
       int slot = slotMap.size();
-      slotMap.putIfAbsent(name, slot);
-      return slot;
+      Integer oldSlot = slotMap.putIfAbsent(name, slot);
+      return (oldSlot == null)? slot: oldSlot;
     }
     public int getNumberOfSlots() {
       return slotMap.size();
@@ -205,7 +205,7 @@ public class Rewriter {
             env.emitLabel(check);
             visit(loop.getCondition(), env);
             env.emitIndy("bsm_truth", "truth", "(Ljava/lang/Object;)Z");
-            env.emitJump(IFEQ, start);
+            env.emitJump(IFNE, start);
           })
           .when(If.class, (_if, env) -> {
             Label notTrue = new Label();

@@ -1,10 +1,10 @@
 require('samples/core.sms')
 
-class(Cons | element, next:
+class(Cons| element, next:
   def(size:
     1 + @next.size()
   )
-  def(filter | predicate:
+  def(filter| predicate:
     n = @next.filter(predicate)
     if(predicate(@element):
       Cons(@element, n):
