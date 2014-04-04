@@ -379,6 +379,14 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
+                    case entry: { // not synthetic
+                                 Expr expr2=(Expr)stack.pop_Object();
+                                          int colon=stack.pop_int();
+                                          Expr expr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.entry(expr,colon,expr2));
+                      
+          }
+          return;
                     case expr_value: { // not synthetic
                                  Token<String> value=(Token<String>)stack.pop_Object();
                                                 stack.push_Object(grammarEvaluator.expr_value(value));
@@ -552,6 +560,72 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                                           int colon=stack.pop_int();
                                           Expr expr=(Expr)stack.pop_Object();
                                                 stack.push_Object(grammarEvaluator.expr_ifelse(expr,colon,block,colon2,block2));
+                      
+          }
+          return;
+                    case expr_star_9_element: { // STAR_SINGLETON
+                             java.util.ArrayList<Expr> list=
+                     new java.util.ArrayList<Expr>();
+                   list.add((Expr)stack.pop_Object());
+                   stack.push_Object(list);
+                    
+          }
+          return;
+                    case expr_star_9_rec: { // STAR_RECURSIVE_LEFT
+                            
+                    Expr expr=(Expr)stack.pop_Object();
+                    List<Expr> expr_star_9_sub=(List<Expr>)stack.pop_Object();
+                     expr_star_9_sub.add(expr);
+                     stack.push_Object(expr_star_9_sub);
+                       
+          }
+          return;
+                    case expr_star_9_empty: { // STAR_EMPTY
+                            stack.push_Object(new java.util.ArrayList<Object>());
+                  
+          }
+          return;
+                    case expr_star_9_through: { // STAR_PASS_THROUGH
+            
+          }
+          return;
+                    case expr_list: { // not synthetic
+                                 List<Expr> expr_star_9=(List<Expr>)stack.pop_Object();
+                                          int lopt=stack.pop_int();
+                                                stack.push_Object(grammarEvaluator.expr_list(lopt,expr_star_9));
+                      
+          }
+          return;
+                    case entry_star_10_element: { // STAR_SINGLETON
+                             java.util.ArrayList<Expr[]> list=
+                     new java.util.ArrayList<Expr[]>();
+                   list.add((Expr[])stack.pop_Object());
+                   stack.push_Object(list);
+                    
+          }
+          return;
+                    case entry_star_10_rec: { // STAR_RECURSIVE_LEFT
+                            
+                    Expr[] entry=(Expr[])stack.pop_Object();
+                    List<Expr[]> entry_star_10_sub=(List<Expr[]>)stack.pop_Object();
+                     entry_star_10_sub.add(entry);
+                     stack.push_Object(entry_star_10_sub);
+                       
+          }
+          return;
+                    case entry_star_10_empty: { // STAR_EMPTY
+                            stack.push_Object(new java.util.ArrayList<Object>());
+                  
+          }
+          return;
+                    case entry_star_10_through: { // STAR_PASS_THROUGH
+            
+          }
+          return;
+                    case expr_map: { // not synthetic
+                                 List<Expr[]> entry_star_10=(List<Expr[]>)stack.pop_Object();
+                                          int lcurl=stack.pop_int();
+                                                stack.push_Object(grammarEvaluator.expr_map(lcurl,entry_star_10));
                       
           }
           return;
@@ -802,6 +876,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                          case parameter:
               stack.pop_Object();
               return;
+                         case entry:
+              stack.pop_Object();
+              return;
                          case expr:
               stack.pop_Object();
               return;
@@ -839,6 +916,18 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
               stack.pop_Object();
               return;
                          case block_param_optional_8:
+              stack.pop_Object();
+              return;
+                         case expr_star_9:
+              stack.pop_Object();
+              return;
+                         case expr_star_9_sub:
+              stack.pop_Object();
+              return;
+                         case entry_star_10:
+              stack.pop_Object();
+              return;
+                         case entry_star_10_sub:
               stack.pop_Object();
               return;
                      }

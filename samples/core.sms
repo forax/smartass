@@ -57,6 +57,33 @@ class('java.lang.Integer':
   )
 )
 
+class('java.lang.Double':
+  equals_mixin()
+  compare_mixin()
+  
+  def('-@':
+    'com.github.forax.smartass.rt.Builtins'.subtract(0, this)
+  )
+  def('+' | other:
+    'java.lang.Double'.sum(this, other)
+  )
+  def('-' | other:
+    'com.github.forax.smartass.rt.Builtins'.subtract(this, other)
+  )
+  def('*' | other:
+    'com.github.forax.smartass.rt.Builtins'.multiply(this, other)
+  )
+  def('/' | other:
+    'com.github.forax.smartass.rt.Builtins'.divide(this, other)
+  )
+  def('%' | other:
+    'com.github.forax.smartass.rt.Builtins'.remainder(this, other)
+  )
+  def(str:
+    'java.lang.Double'.toString(this)
+  )
+)
+
 class('java.lang.String':
   equals_mixin()
   compare_mixin()

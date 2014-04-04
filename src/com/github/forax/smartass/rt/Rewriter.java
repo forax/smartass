@@ -20,6 +20,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import com.github.forax.smartass.ast.Block;
+import com.github.forax.smartass.ast.Data;
 import com.github.forax.smartass.ast.Expr;
 import com.github.forax.smartass.ast.FieldAccess;
 import com.github.forax.smartass.ast.If;
@@ -139,7 +140,7 @@ public class Rewriter {
             visit(lastExpr, env);
           })
           .when(Literal.class, (expr, env) -> {
-            env.emitIndy("bsm_const", expr.getValue(), "()Ljava/lang/Object;");
+            env.emitIndy("bsm_const", expr.getValue().replace('.', '_'), "()Ljava/lang/Object;");
           })
           .when(VarAccess.class, (expr, env) -> {
             String name = expr.getId();
@@ -167,6 +168,7 @@ public class Rewriter {
           .when(Lambda.class, (lambda, env) -> {
             LinkedHashSet<String> freeVars = new LinkedHashSet<>();
             visitFreeVar(lambda, new VarEnv(freeVars));
+            
             for(Iterator<String> it = freeVars.iterator(); it.hasNext();) {
               String name = it.next();
               Integer slotOrNull = env.lookupSlotOrNull(name);
@@ -192,6 +194,7 @@ public class Rewriter {
               visit(lambdaOrNull, env);
               argCount++;
             }
+            env.emitLineNumber(call.getLineNumber());
             env.emitIndy("bsm_method_call", "apply", desc(argCount));
           })
           .when(While.class, (loop, env) -> {
@@ -236,6 +239,12 @@ public class Rewriter {
             }
             env.emitInsn(ACONST_NULL);  // dead code, but not a big deal
           })
+          .when(Data.class, (data, env) -> {
+            for(Expr expr: data.getExprs()) {
+              visit(expr, env);
+            }
+            env.emitIndy("bsm_data", data.getKind().name().toLowerCase(), desc(data.getExprs().size()));
+          })
           ;
   
   static class VarEnv {
@@ -251,7 +260,7 @@ public class Rewriter {
       this(new HashSet<>(), freeVars);
     }
     
-    public VarEnv newEnv() {
+    public VarEnv duplicateEnv() {
       return new VarEnv(new HashSet<>(localVars), freeVars);
     }
   }
@@ -278,12 +287,13 @@ public class Rewriter {
           })
           .when(VarAssignment.class, (expr, env) -> {
             env.localVars.add(expr.getId());
+            visitFreeVar(expr.getExpr(), env);
           })
           .when(FieldAccess.class, (expr, env) -> {
             // field name are not variable
           })
           .when(Lambda.class, (lambda, env) -> {
-            VarEnv newEnv = env.newEnv();
+            VarEnv newEnv = new VarEnv(env.freeVars);  // fresh env
             newEnv.localVars.add("this");  // implicit this
             for(Parameter parameter: lambda.getParameters()) {
               newEnv.localVars.add(parameter.getName());
@@ -303,18 +313,23 @@ public class Rewriter {
           })
           .when(While.class, (loop, env) -> {
             visitFreeVar(loop.getCondition(), env);
-            visitFreeVar(loop.getBlock(), env.newEnv());
+            visitFreeVar(loop.getBlock(), env.duplicateEnv());
           })
           .when(If.class, (_if, env) -> {
             visitFreeVar(_if.getCondition(), env);
-            visitFreeVar(_if.getTrueBlock(), env.newEnv());
+            visitFreeVar(_if.getTrueBlock(), env.duplicateEnv());
             Block falseBlock = _if.getFalseBlockOptional();
             if (falseBlock != null) {
-              visitFreeVar(falseBlock, env.newEnv());
+              visitFreeVar(falseBlock, env.duplicateEnv());
             }
           })
           .when(Stop.class, (stop, env) -> {
             visitFreeVar(stop.getExpr(), env);
+          })
+          .when(Data.class, (data, env) -> {
+            for(Expr expr: data.getExprs()) {
+              visitFreeVar(expr, env);
+            }
           })
           ;
   

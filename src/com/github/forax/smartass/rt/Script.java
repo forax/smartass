@@ -15,6 +15,7 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -246,7 +247,7 @@ public class Script {
       constant = false;
       break;
     default:
-      if (name.indexOf('.') == -1) {
+      if (name.indexOf('_') == -1) {
         try {
           constant = Integer.parseInt(name);
         } catch(NumberFormatException e) {
@@ -257,6 +258,7 @@ public class Script {
           } 
         }
       } else {
+        name = name.replace('_', '.');
         try {
           constant = Double.parseDouble(name);
         } catch(NumberFormatException e) {
@@ -390,6 +392,48 @@ public class Script {
   @SuppressWarnings("unused")  // called from a method handle
   private static Throwable asThrowable(Object value) {
     return new Error(value.toString());
+  }
+  
+  private static final MethodHandle AS_LIST = findStatic(Script.class, "asList", Object.class, Object[].class);
+  private static final MethodHandle AS_MAP = findStatic(Script.class, "asMap", Object.class, Object[].class);
+  
+  @MethodInfo(hidden=true)
+  public static CallSite bsm_data(@SuppressWarnings("unused") Lookup lookup, String name, MethodType type) {
+    MethodHandle mh;
+    switch(name) {
+    case "list":
+      mh = AS_LIST;
+      break;
+    case "map":
+      mh = AS_MAP;
+      break;
+    default:
+      throw new LinkageError("unknown data structure " + name);
+    }
+    return new ConstantCallSite(mh.asCollector(Object[].class, type.parameterCount()));
+  }
+  
+  @SuppressWarnings("unused")  // called from a method handle
+  private static Object asList(Object[] values) {
+    return new AbstractList<Object>() {
+      @Override
+      public Object get(int index) {
+        return values[index];
+      }
+      @Override
+      public int size() {
+        return values.length;
+      }
+    };
+  }
+  
+  @SuppressWarnings("unused")  // called from a method handle
+  private static Object asMap(Object[] values) {
+    HashMap<Object, Object> map = new HashMap<>();
+    for(int i = 0; i < values.length; i+=2) {
+      map.put(values[i], values[i + 1]);
+    }
+    return Collections.unmodifiableMap(map);
   }
   
   @MethodInfo(hidden=true)

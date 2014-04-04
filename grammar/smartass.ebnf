@@ -3,6 +3,7 @@ directives:
 
 imports:
   java.util.List
+  java.util.Map
   com.github.forax.smartass.ast.Block
   com.github.forax.smartass.ast.Expr
   com.github.forax.smartass.ast.Lambda
@@ -80,6 +81,7 @@ types:
  block: List<Expr>
  parameter: Parameter
  block_param: Lambda
+ entry: Expr[]
 
 starts:
   script
@@ -118,6 +120,9 @@ productions:
            | 'id'            { parameter_id }
            ;
  
+ entry = expr ':' expr   { entry }
+       ;
+ 
  expr = 'value'                                               { expr_value }
       | '(' expr ')'                                          { expr_parens }
       | name                                                  { expr_var_access }  
@@ -133,6 +138,9 @@ productions:
       | 'while' '(' expr ':' block ')'                        { expr_while }
       | 'if' '(' expr ':' block ')'                           { expr_if }
       | 'if' '(' expr ':' block ':' block')'                  { expr_ifelse }
+      
+      | '[' expr/'comma'* ']'                                 { expr_list }
+      | '{' entry/'comma'* '}'                                { expr_map }
       
       | '!' expr                               [unary]        { expr_unary_not }
       | '-' expr                               [unary]        { expr_unary_neg }

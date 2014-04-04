@@ -12,6 +12,7 @@ block,
 name,
 block_param,
 parameter,
+entry,
 expr,
 instrs_optional_0,
 doc_plus_1,
@@ -24,6 +25,10 @@ expr_star_5_sub,
 block_param_optional_6,
 expr_star_7,
 expr_star_7_sub,
-block_param_optional_8
+block_param_optional_8,
+expr_star_9,
+expr_star_9_sub,
+entry_star_10,
+entry_star_10_sub
 ;
 }

@@ -1,0 +1,9 @@
+'com.github.forax.smartass.rt.Script'.def('foo' | x:
+  y = x
+  lambda1 = (x: 
+    z = (x: y)
+    z(x)
+  )(x)
+)
+
+foo(3)

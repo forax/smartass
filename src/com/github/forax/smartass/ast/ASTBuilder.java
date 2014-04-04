@@ -9,7 +9,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.github.forax.smartass.ast.Data.DataKind;
 import com.github.forax.smartass.grammar.tools.Analyzers;
 import com.github.forax.smartass.grammar.tools.GrammarEvaluator;
 import com.github.forax.smartass.grammar.tools.TerminalEvaluator;
@@ -219,6 +221,19 @@ public class ASTBuilder implements GrammarEvaluator {
   @Override
   public Expr expr_ifelse(Expr expr, int colon, List<Expr> block, int colon2, List<Expr> block2) {
     return new If(expr, new Block(block, colon), new Block(block2, colon2), expr.getLineNumber());
+  }
+  
+  @Override
+  public Expr expr_list(int lopt, List<Expr> expr_star) {
+    return new Data(DataKind.LIST, expr_star, lopt);
+  }
+  @Override
+  public Expr[] entry(Expr expr, int colon, Expr expr2) {
+    return new Expr[] { expr, expr2 };
+  }
+  @Override
+  public Expr expr_map(int lcurl, List<Expr[]> entry_star) {
+    return new Data(DataKind.LIST, entry_star.stream().flatMap(array -> Stream.of(array[0], array[1])).collect(Collectors.toList()), lcurl);
   }
   
   private static MethodCall op(Expr receiver, String selector, Expr... arguments) {

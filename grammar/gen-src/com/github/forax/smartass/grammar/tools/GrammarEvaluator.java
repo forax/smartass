@@ -85,6 +85,11 @@ public interface GrammarEvaluator {
    *  <code>parameter ::= id</code>
    */
   public Parameter parameter_id(Token<String> id);
+  /** This methods is called after the reduction of the non terminal entry
+   *  by the grammar production entry.
+   *  <code>entry ::= expr colon expr</code>
+   */
+  public Expr[] entry(Expr expr,int colon,Expr expr2);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_value.
    *  <code>expr ::= value</code>
@@ -145,6 +150,16 @@ public interface GrammarEvaluator {
    *  <code>expr ::= _if lpar expr colon block colon block rpar</code>
    */
   public Expr expr_ifelse(Expr expr,int colon,List<Expr> block,int colon2,List<Expr> block2);
+  /** This methods is called after the reduction of the non terminal expr
+   *  by the grammar production expr_list.
+   *  <code>expr ::= lopt expr_star_9 ropt</code>
+   */
+  public Expr expr_list(int lopt,List<Expr> expr_star);
+  /** This methods is called after the reduction of the non terminal expr
+   *  by the grammar production expr_map.
+   *  <code>expr ::= lcurl entry_star_10 rcurl</code>
+   */
+  public Expr expr_map(int lcurl,List<Expr[]> entry_star);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_unary_not.
    *  <code>expr ::= bang expr</code>
