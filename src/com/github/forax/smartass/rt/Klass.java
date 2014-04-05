@@ -12,6 +12,7 @@ public class Klass {
   private final Klass staticKlass;
   private final LinkedHashMap<String, MethodHandle> fieldMap;
   private final Map<String, Function> methodMap;
+  private Class<?> javaClass;
   private Initializer initializer;
   
   private Klass(String name, Klass staticKlass, LinkedHashMap<String, MethodHandle> fieldMap, Map<String, Function> methodMap) {
@@ -40,6 +41,8 @@ public class Klass {
         initializer.accept(klass);
       }
       
+      //System.out.println("call initializer " + function);
+      
       List<String> parameters = function.getParameters();
       Object[] args = new Object[1 + parameters.size()];
       args[0] = klass;
@@ -56,6 +59,25 @@ public class Klass {
       this.initializer = null;
       initializer.accept(this);
     }
+  }
+  
+  void setJavaClass(Class<?> javaClass) {
+    Objects.requireNonNull(javaClass);
+    if (this.javaClass != null) {
+      throw new IllegalStateException("current klass already linked to a Java class");
+    }
+    this.javaClass = javaClass;
+  }
+  Class<?> getJavaClass() {
+    if (javaClass == null) { 
+      // The class is not yet created, force it's creation(FIXME)
+      getMethod("@init").getTarget();
+      
+      if (javaClass == null) {
+        throw new AssertionError();
+      }
+    }
+    return javaClass;
   }
   
   Set<String> getFields() {
@@ -91,7 +113,6 @@ public class Klass {
   public String getName() {
     return name;
   }
-  
   public Klass getStaticKlass() {
     return staticKlass;
   }

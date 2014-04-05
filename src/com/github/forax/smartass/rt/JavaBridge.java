@@ -56,7 +56,7 @@ class JavaBridge {
       
       //System.out.println("register field " + field.getName());
       staticFunMap.put(field.getName(),
-          new Function(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null,
+          Function.createFromMH(Collections.emptyList(),
               fun -> {
                 MethodHandle mh;
                 try {
@@ -73,13 +73,9 @@ class JavaBridge {
   
   private static void populateKlassWithMethods(HashMap<String, Function> funMap, HashMap<String, ArrayList<Method>> classMap) {
     classMap.forEach((name, methods) -> {
-      
       Method method = methods.get(0);
       List<String> params = Arrays.stream(method.getParameters()).map(Parameter::getName).collect(Collectors.toList());
-      Function function = new Function(Collections.emptyList(),
-          params,
-          Collections.nCopies(params.size(), null),  // Java methods are untyped ?
-          null,
+      Function function = Function.createFromMH(params,
           fun -> {
             if (methods.size() == 1) {
               return createMH(methods.get(0));

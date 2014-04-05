@@ -49,11 +49,13 @@ public class Script {
     protected Klass computeValue(Class<?> type) {
       Klass klass = threadLocal.get();
       if (klass != null) {
+        klass.setJavaClass(type);
         return klass;
       }
       
       // transform a Java class to a Klass
       klass = JavaBridge.javaClasstoKlass(type, this);
+      klass.setJavaClass(type);
       klassCache.put(type.getName(), klass);
       return klass;
     }
@@ -68,7 +70,7 @@ public class Script {
     threadLocal.set(klass);
     try {
       if (klasses.get(type) != klass) {
-        throw new IllegalStateException("java class already linked to a klass");
+        throw new IllegalStateException("Java class already linked to a klass");
       }
     } finally {
       threadLocal.set(null);
@@ -154,7 +156,7 @@ public class Script {
       return false;
     }
     for(int i = 1; i < length; i++) {
-      if (!Character.isJavaIdentifierPart(id.charAt(0))) {
+      if (!Character.isJavaIdentifierPart(id.charAt(i))) {
         return false;
       }
     }
@@ -178,7 +180,37 @@ public class Script {
     } catch (NoSuchMethodException | IllegalAccessException e) {
       throw new AssertionError(e);
     }
+    
+    //System.out.println("createFunctionMH:" + function);
+    //System.out.println("isTypeHintsEnabled:" + function.isTypeHintsEnabled());
+    //System.out.println("function: freevars + receiver" + (1 + function.getFreeVars().size()));
+    
+    if (function.isTypeHintsEnabled()) {
+      List<Klass> parameterTypeHints = resolveParameterTypeHints(function.getLambda().getParameters());
+      target = assertTypeHints(target, function.getFreeVars().size() + 1, parameterTypeHints);
+      
+      //System.out.println("assert typeHint for " + function.getNameHint());
+    }
     return target;
+  }
+  
+  private static final MethodHandle TYPE_ASSERT = findVirtual(Class.class, "cast", Object.class, Object.class);
+  
+  private static MethodHandle assertTypeHints(MethodHandle target, int startOfFirstParameter, List<Klass> parameterTypeHints) {
+    MethodHandle[] filters = null;
+    for(int i = 0; i<parameterTypeHints.size(); i++) {
+      Klass typeHint = parameterTypeHints.get(i);
+      if (typeHint != null) {
+        if (filters == null) {
+          filters = new MethodHandle[parameterTypeHints.size()];
+        }
+        filters[i] = TYPE_ASSERT.bindTo(typeHint.getJavaClass());
+      }
+    }
+    if (filters == null) {
+      return target;
+    }
+    return MethodHandles.filterArguments(target, startOfFirstParameter, filters);
   }
   
   MethodHandle createKlassMH(Klass klass) {
@@ -269,8 +301,7 @@ public class Script {
     return new ConstantCallSite(MethodHandles.constant(Object.class, constant));
   }
   
-  private static final MethodHandle LAMBDA =
-      findStatic(Script.class, "lambda", Object.class, Function.class, Object[].class);
+  
   
   @MethodInfo(hidden=true)
   public static CallSite bsm_lambda(Lookup lookup, @SuppressWarnings("unused") String name, MethodType type, int constantIndex) {
@@ -280,25 +311,46 @@ public class Script {
     
     List<String> freeVars = protoFun.freeVars;
     Lambda lambda = protoFun.lambda;
-    List<Parameter> parameters = lambda.getParameters();
-    Function function = new Function(script, freeVars,
-        parameters.stream().map(Parameter::getName).collect(Collectors.toList()),
-        script.resolveParameterTypeHints(parameters),
-        lambda);
+    List<String> parameters = lambda.getParameters().stream().map(Parameter::getName).collect(Collectors.toList());
     
     // no free variables, always return the same function
     if (freeVars.isEmpty()) {
+      Function function = Function.createFromLambda(script, freeVars, parameters, lambda);
       return new ConstantCallSite(MethodHandles.constant(Object.class, function));
     }
-    return new ConstantCallSite(LAMBDA.bindTo(function).asCollector(Object[].class, type.parameterCount()));
+    
+    BoundInfo boundInfo = new BoundInfo(script, freeVars, parameters, lambda);
+    return new ConstantCallSite(BOUND_FUNCTION.bindTo(boundInfo).asCollector(Object[].class, type.parameterCount()));
   }
   
-  @SuppressWarnings("unused")  // called from a method handle
-  private static Object lambda(Function function, Object[] boundValues) {
-    // create a new lambda with the same values
-    return new Function(function.getFreeVars(), function.getParameters(), function.getTypeHints(), function.getLambda(),
-         __ -> MethodHandles.insertArguments(function.getTarget(), 0, boundValues)
-    );
+  private static final MethodHandle BOUND_FUNCTION =
+      findVirtual(BoundInfo.class, "createBoundFunction", Object.class, Object[].class);
+  
+  static class BoundInfo {
+    private final Script script;
+    private final List<String> freeVars;
+    private final List<String> parameters;
+    private final Lambda lambda;
+    private MethodHandle cache;
+    
+    BoundInfo(Script script, List<String> freeVars, List<String> parameters, Lambda lambda) {
+      this.script = script;
+      this.freeVars = freeVars;
+      this.parameters = parameters;
+      this.lambda = lambda;
+    }
+    
+    //called from a method handle
+    Object createBoundFunction(Object[] boundValues) {
+      return Function.createFromLambda(freeVars, parameters, lambda,
+          fun -> {
+            MethodHandle target = cache;
+            if (target == null) {
+              cache = target = script.createFunctionMH(fun);
+            }
+            return MethodHandles.insertArguments(target, 0, boundValues);
+          });
+    }
   }
   
   private static final MethodHandle FIELD_GET =
@@ -311,6 +363,7 @@ public class Script {
   
   @SuppressWarnings("unused")  // called from a method handle
   private static Object field_get(String name, Object receiver) throws Throwable {
+    //System.out.println("bsm_get " + receiver.getClass() +" " + name);
     MethodHandle target = MethodHandles.publicLookup().findGetter(receiver.getClass(), name, Object.class);
     return target.asType(MethodType.methodType(Object.class, Object.class)).invokeExact(receiver);
   }
@@ -439,7 +492,7 @@ public class Script {
   @MethodInfo(hidden=true)
   public Object eval(Lambda lambda) throws Throwable {
     Objects.requireNonNull(lambda);
-    Function main = new Function(this, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), lambda);
+    Function main = Function.createFromLambda(this, Collections.emptyList(), Collections.emptyList(), lambda);
     main.setNameHint("main");
     return main.getTarget().invokeExact((Object)this);
   }
@@ -458,27 +511,34 @@ public class Script {
     if (symbol instanceof String) { // new class !
       name = (String)symbol;
       klass = Klass.create(name, null, parameters, new HashMap<>());
-      klass.def("@init", new Function(Collections.emptyList(),
-          parameters,
-          body.getTypeHints(),
-          null,
-          fun -> createKlassMH(klass)));
+      klass.def("@init", Function.createFromMH(parameters, __ -> createKlassMH(klass)));
       klassCache.put(name, klass);
     } else {
       klass = (Klass)symbol;
       name = klass.getName();
     }
     if (body.getNameHint() == null) {
-      body.setNameHint(klass.getName().replace('.',  '_') + "\\init");
+      body.setNameHint(klass.getName().replace('.',  '_') + "_init");
+    }
+    if (body.isTypeHintsEnabled()) {
+      body.disableTypeHints();
     }
     klass.registerInitializer(this, body);  // delay initialization
+    return klass;
+  }
+  
+  public Klass alias(String name, Klass klass) {
+    if (klassCache.get(name) != null) {
+      throw new IllegalStateException("klass " + name +" is already defined");
+    }
+    klassCache.put(name, klass);
     return klass;
   }
   
   @SuppressWarnings("static-method")
   public Function fieldAccessor(String name) {
     Objects.requireNonNull(name);
-    return new Function(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null,
+    return Function.createFromMH(Collections.emptyList(),
         fun -> Script.bsm_field_get(null /*unused*/, name, null /*unused*/).dynamicInvoker()
         );
   }
@@ -488,11 +548,9 @@ public class Script {
     if (parameterCount < 0) {
       throw new IllegalArgumentException("parameterCount < 0");
     }
-    return new Function(Collections.emptyList(),
+    return Function.createFromMH(
         IntStream.range(0, parameterCount).mapToObj(value -> "arg" + value).collect(Collectors.toList()),
-        Collections.nCopies(parameterCount, null),
-        null,
-        fun -> METHOD_CALL.bindTo(this).asCollector(Object[].class, parameterCount)
+        __ -> METHOD_CALL.bindTo(this).asCollector(Object[].class, parameterCount)
         );
   }
   
