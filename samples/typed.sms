@@ -1,6 +1,6 @@
-require('samples/core.sms')
+require("samples/core.sms")
 
-def(sum | 'java.lang.Integer' a, 'java.lang.Integer' b:
+def('sum | 'java.lang.Integer a, 'java.lang.Integer b:
   a + b
 )
 

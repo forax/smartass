@@ -1,4 +1,4 @@
-'java.math.BigInteger'.def('+' | other :
+'java.math.BigInteger .def('+ | other :
   this.add(other)
 ) 
 

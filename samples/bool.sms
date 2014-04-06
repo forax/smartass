@@ -1,5 +1,5 @@
-class('java.lang.Boolean':
-  def('!':
+class('java.lang.Boolean:
+  def('!:
     if(this: false: true)
   )
 )
@@ -8,10 +8,9 @@ a = true
 b = false
 
 if(a:
-  'java.lang.System'.out().println(a)
+  'java.lang.System .out().println(a)
 )
 if(!b:
-  'java.lang.System'.out().println(b)
+  'java.lang.System .out().println(b)
 )
 
-''

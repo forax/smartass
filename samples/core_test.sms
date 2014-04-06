@@ -1,12 +1,12 @@
-require('samples/core.sms')
+require("samples/core.sms")
 
 // booleans
 assert(: true)
 assert(: !false)
 assert(: true == true)
 assert(: false != true)
-assert(: true.str() == 'true')
-assert(: false.str() == 'false')
+assert(: true.str() == "true")
+assert(: false.str() == "false")
 
 // integers
 assert(: 1 == 1)
@@ -23,17 +23,16 @@ assert(: 1 + 2 == 3)
 assert(: 1 - 3 == -2)
 assert(: 2 * 4 == 8)
 
-assert(: 2.str() == '2')
-assert(: (-747).str() == '-747')
+assert(: 2.str() == "2")
+assert(: (-747).str() == "-747")
 
 // strings
-assert(: foo == foo)
-assert(: bar != foo)
-assert(: a < b)
-assert(: a <= a)
-assert(: c > b)
-assert(: c >= c)
-assert(: foo.str() == foo)
+assert(: "foo" == "foo")
+assert(: "bar" != "foo")
+assert(: "a" < "b")
+assert(: "a" <= "a")
+assert(: "c" > "b")
+assert(: "c" >= "c")
+assert(: "foo".str() == "foo")
 
-print(Ok)
-''
+print("Ok !")

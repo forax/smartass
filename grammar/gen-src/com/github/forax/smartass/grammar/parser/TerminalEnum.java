@@ -37,6 +37,7 @@ _return,
 _throw,
 value,
 id,
+quote,
 text,
 doc,
 __eof__

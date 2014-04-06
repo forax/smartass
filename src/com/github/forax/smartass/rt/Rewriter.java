@@ -40,6 +40,8 @@ public class Rewriter {
       MethodType.methodType(CallSite.class, Lookup.class, String.class, MethodType.class).toMethodDescriptorString();
   static final String BSM_INT_SIG =
       MethodType.methodType(CallSite.class, Lookup.class, String.class, MethodType.class, int.class).toMethodDescriptorString();
+  static final String BSM_STRING_SIG =
+      MethodType.methodType(CallSite.class, Lookup.class, String.class, MethodType.class, String.class).toMethodDescriptorString();
   
   static class ProtoFun {
     final List<String> freeVars;
@@ -100,10 +102,15 @@ public class Rewriter {
       mv.visitInvokeDynamicInsn(name, desc,
           new Handle(H_INVOKESTATIC, INTERNAL_NAME, bsmName, BSM_SIG));
     }
-    public void emitIndy(String bsmName, String name, String desc, Object constObject) {
+    public void emitIndy(String bsmName, String name, String desc, String constValue) {
+      mv.visitInvokeDynamicInsn(name, desc,
+          new Handle(H_INVOKESTATIC, INTERNAL_NAME, bsmName, BSM_STRING_SIG),
+          constValue);
+    }
+    public void emitIndy(String bsmName, String name, String desc, ProtoFun protoFun) {
       mv.visitInvokeDynamicInsn(name, desc,
           new Handle(H_INVOKESTATIC, INTERNAL_NAME, bsmName, BSM_INT_SIG),
-          dictionary.intern(constObject));
+          dictionary.intern(protoFun));
     }
     
     public void emitLineNumber(int lineNumber) {
@@ -140,20 +147,21 @@ public class Rewriter {
             visit(lastExpr, env);
           })
           .when(Literal.class, (expr, env) -> {
-            env.emitIndy("bsm_const", expr.getValue().replace('.', '_'), "()Ljava/lang/Object;");
+            String value = expr.getValue();
+            if (value.charAt(0) == '\'') {
+              env.emitIndy("bsm_symbol", "symbolOrString", "()Ljava/lang/Object;", value.substring(1));
+            } else {
+              env.emitIndy("bsm_const", "const", "()Ljava/lang/Object;", value);
+            }
           })
           .when(VarAccess.class, (expr, env) -> {
             String name = expr.getId();
-            boolean quoted = name.charAt(0) == '\'';
-            Integer slotOrNull;
-            if (quoted || (slotOrNull = env.lookupSlotOrNull(name)) == null) {   // it's a symbol ?
-              if (quoted) { // remove enclosing quotes
-                name = name.substring(1, name.length() - 1);  
-              }
-              env.emitIndy("bsm_symbol", "symbol", "()Ljava/lang/Object;", name);
-            } else {
-              env.emitVar(ALOAD, slotOrNull);
+            Integer slot = env.lookupSlotOrNull(name);
+            if (slot == null) { // it can be a symbol
+              env.emitIndy("bsm_symbol", (expr.stringAllowed())? "symbolOrString": "symbol", "()Ljava/lang/Object;", name);
+              return;
             }
+            env.emitVar(ALOAD, slot);
           })
           .when(VarAssignment.class, (expr, env) -> {
             visit(expr.getExpr(), env);

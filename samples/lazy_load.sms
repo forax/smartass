@@ -1,18 +1,17 @@
-require('samples/core.sms')
+require("samples/core.sms")
 
 script = this
 
-class(Hello | message:
-  script.print('start init')
+class('Hello | message:
+  script.print("start init")
   
-  def(sayHello:
-    script.print('hello ' + @message)
+  def('sayHello:
+    script.print("hello " + @message)
   )
   
-  script.print('stop init')
+  script.print("stop init")
 )
 
-print('create an Hello instance !')
-hello = Hello('world')
+print("create an Hello instance !")
+hello = Hello("world")
 hello.sayHello()
-

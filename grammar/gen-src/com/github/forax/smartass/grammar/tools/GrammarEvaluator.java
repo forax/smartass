@@ -55,16 +55,6 @@ public interface GrammarEvaluator {
    *  <code>block ::= instrs_optional_2</code>
    */
   public List<Expr> block(List<Expr> instrs_optional);
-  /** This methods is called after the reduction of the non terminal name
-   *  by the grammar production name_id.
-   *  <code>name ::= id</code>
-   */
-  public Token<String> name_id(Token<String> id);
-  /** This methods is called after the reduction of the non terminal name
-   *  by the grammar production name_text.
-   *  <code>name ::= text</code>
-   */
-  public Token<String> name_text(Token<String> text);
   /** This methods is called after the reduction of the non terminal block_param
    *  by the grammar production block_param_block.
    *  <code>block_param ::= colon block</code>
@@ -76,10 +66,15 @@ public interface GrammarEvaluator {
    */
   public Lambda block_param_lambda(int pipe,List<Parameter> parameter_star,int colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal parameter
-   *  by the grammar production parameter_hint_id.
-   *  <code>parameter ::= name id</code>
+   *  by the grammar production parameter_hint_quote_id.
+   *  <code>parameter ::= quote id</code>
    */
-  public Parameter parameter_hint_id(Token<String> name,Token<String> id);
+  public Parameter parameter_hint_quote_id(Token<String> quote,Token<String> id);
+  /** This methods is called after the reduction of the non terminal parameter
+   *  by the grammar production parameter_hint_id_id.
+   *  <code>parameter ::= id id</code>
+   */
+  public Parameter parameter_hint_id_id(Token<String> id,Token<String> id2);
   /** This methods is called after the reduction of the non terminal parameter
    *  by the grammar production parameter_id.
    *  <code>parameter ::= id</code>
@@ -90,11 +85,31 @@ public interface GrammarEvaluator {
    *  <code>entry ::= expr colon expr</code>
    */
   public Expr[] entry(Expr expr,int colon,Expr expr2);
+  /** This methods is called after the reduction of the non terminal selector
+   *  by the grammar production selector_id.
+   *  <code>selector ::= id</code>
+   */
+  public Expr selector_id(Token<String> id);
+  /** This methods is called after the reduction of the non terminal selector
+   *  by the grammar production selector_quote.
+   *  <code>selector ::= quote</code>
+   */
+  public Expr selector_quote(Token<String> quote);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_value.
    *  <code>expr ::= value</code>
    */
   public Expr expr_value(Token<String> value);
+  /** This methods is called after the reduction of the non terminal expr
+   *  by the grammar production expr_text.
+   *  <code>expr ::= text</code>
+   */
+  public Expr expr_text(Token<String> text);
+  /** This methods is called after the reduction of the non terminal expr
+   *  by the grammar production expr_quote.
+   *  <code>expr ::= quote</code>
+   */
+  public Expr expr_quote(Token<String> quote);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_parens.
    *  <code>expr ::= lpar expr rpar</code>
@@ -102,9 +117,9 @@ public interface GrammarEvaluator {
   public Expr expr_parens(Expr expr);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_var_access.
-   *  <code>expr ::= name</code>
+   *  <code>expr ::= id</code>
    */
-  public Expr expr_var_access(Token<String> name);
+  public Expr expr_var_access(Token<String> id);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_var_assignment.
    *  <code>expr ::= id assign expr</code>
@@ -132,9 +147,9 @@ public interface GrammarEvaluator {
   public Expr expr_funcall(Expr expr,List<Expr> expr_star,Lambda block_param_optional);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_mthcall.
-   *  <code>expr ::= expr dot name lpar expr_star_7 block_param_optional_8 rpar</code>
+   *  <code>expr ::= expr dot selector lpar expr_star_7 block_param_optional_8 rpar</code>
    */
-  public Expr expr_mthcall(Expr expr,Token<String> name,List<Expr> expr_star,Lambda block_param_optional);
+  public Expr expr_mthcall(Expr expr,Expr selector,List<Expr> expr_star,Lambda block_param_optional);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_while.
    *  <code>expr ::= _while lpar expr colon block rpar</code>

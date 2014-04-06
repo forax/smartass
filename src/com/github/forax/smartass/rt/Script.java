@@ -256,22 +256,26 @@ public class Script {
   }
   
   @MethodInfo(hidden=true)
-  public static CallSite bsm_symbol(Lookup lookup, @SuppressWarnings("unused")String name, @SuppressWarnings("unused")MethodType mtype, int constantIndex) {
+  public static CallSite bsm_symbol(Lookup lookup, String name, @SuppressWarnings("unused")MethodType mtype, String symbol) {
     ScriptClassLoader classLoader = (ScriptClassLoader)lookup.lookupClass().getClassLoader();
     Script script = classLoader.getScript();
     
-    String symbol = (String)script.dictionary.getConstantAt(constantIndex);
-    Klass klass = script.resolveKlass(symbol);
-    Object constant = (klass != null)? klass: symbol;
+    Object constant = script.resolveKlass(symbol);
+    if (constant == null) {
+      if (!name.equals("symbolOrString")) {
+        throw new LinkageError("unknown symbol or local variable " + symbol);
+      }
+      constant = symbol;
+    }
     
     //System.out.println("resolved symbol " + symbol + " as " + constant.getClass());
     return new ConstantCallSite(MethodHandles.constant(Object.class, constant));
   }
   
   @MethodInfo(hidden=true)
-  public static CallSite bsm_const(@SuppressWarnings("unused") Lookup lookup,  String name, @SuppressWarnings("unused") MethodType type) {
+  public static CallSite bsm_const(@SuppressWarnings("unused") Lookup lookup,  @SuppressWarnings("unused") String name, @SuppressWarnings("unused") MethodType type, String literal) {
     Object constant;
-    switch(name) {
+    switch(literal) {
     case "true":
       constant = true;
       break;
@@ -279,36 +283,36 @@ public class Script {
       constant = false;
       break;
     default:
-      if (name.indexOf('_') == -1) {
-        try {
-          constant = Integer.parseInt(name);
-        } catch(NumberFormatException e) {
-          try {
-            constant = Long.parseLong(name);
-          } catch(NumberFormatException e2) {
-            constant = new BigInteger(name);
-          } 
-        }
+      if (literal.charAt(0) == '"') { // string literal ?
+        constant = literal.substring(1, literal.length() - 1);
       } else {
-        name = name.replace('_', '.');
-        try {
-          constant = Double.parseDouble(name);
-        } catch(NumberFormatException e) {
-          constant = new BigDecimal(name);
+        if (literal.indexOf('.') == -1) {   // integer value ?
+          try {
+            constant = Integer.parseInt(literal);
+          } catch(NumberFormatException e) {
+            try {
+              constant = Long.parseLong(literal);
+            } catch(NumberFormatException e2) {
+              constant = new BigInteger(literal);
+            } 
+          }
+        } else {
+          try {
+            constant = Double.parseDouble(literal);
+          } catch(NumberFormatException e) {
+            constant = new BigDecimal(literal);
+          }
         }
       }
     }
     return new ConstantCallSite(MethodHandles.constant(Object.class, constant));
   }
   
-  
-  
   @MethodInfo(hidden=true)
   public static CallSite bsm_lambda(Lookup lookup, @SuppressWarnings("unused") String name, MethodType type, int constantIndex) {
     ScriptClassLoader classLoader = (ScriptClassLoader)lookup.lookupClass().getClassLoader();
     Script script = classLoader.getScript();
     ProtoFun protoFun = (ProtoFun)script.dictionary.getConstantAt(constantIndex);
-    
     List<String> freeVars = protoFun.freeVars;
     Lambda lambda = protoFun.lambda;
     List<String> parameters = lambda.getParameters().stream().map(Parameter::getName).collect(Collectors.toList());
@@ -502,7 +506,7 @@ public class Script {
   // ---------------------------
   
   @MethodInfo(name="class")
-  public Klass createClass(Object symbol, Function body) throws Throwable {
+  public Klass defClass(Object symbol, Function body) throws Throwable {
     Objects.requireNonNull(symbol);
     Objects.requireNonNull(body);
     Klass klass;
@@ -521,7 +525,7 @@ public class Script {
       body.setNameHint(klass.getName().replace('.',  '_') + "_init");
     }
     if (body.isTypeHintsEnabled()) {
-      body.disableTypeHints();
+      body.disableTypeHints();  // don't try to verify parameters of the initializer
     }
     klass.registerInitializer(this, body);  // delay initialization
     return klass;

@@ -1,4 +1,4 @@
-require('samples/core.sms')
+require("samples/core.sms")
 
 result = (:
   2

@@ -40,9 +40,6 @@ public class Klass {
       if (initializer != null) {  // call previous initializer
         initializer.accept(klass);
       }
-      
-      //System.out.println("call initializer " + function);
-      
       List<String> parameters = function.getParameters();
       Object[] args = new Object[1 + parameters.size()];
       args[0] = klass;

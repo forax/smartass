@@ -1,8 +1,7 @@
-class(Point | x, y:
-  def('x': @x)
-  def('y': @y)
+class('Point | x, y:
+  def('x: @x)
+  def('y: @y)
 )
 
 p = Point(1, 2)
 p.x()
-

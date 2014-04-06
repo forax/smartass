@@ -1,8 +1,8 @@
-class('com.github.forax.smartass.rt.Script':
-  def(println | value:
-    'java.lang.System'.out().println(value)
+class('com.github.forax.smartass.rt.Script:
+  def('println | value:
+    'java.lang.System .out().println(value)
   )
 )
 
-println('hello smartass')
-''
+println("hello smartass")
+

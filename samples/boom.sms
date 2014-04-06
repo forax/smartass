@@ -1,7 +1,7 @@
-require('samples/core.sms')
+require("samples/core.sms")
 
-def(boom:
-  throw 'boom !'
+def('boom:
+  throw "boom !"
 )
 
 boom()

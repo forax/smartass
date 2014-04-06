@@ -55,7 +55,8 @@ tokens:
   
   value = "([0-9]+(\.[0-9]+)?)|true|false"
   id = "([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*"
-  text = "'([^'])*'"
+  quote = "'[^()':,| \t\r\n;]+"
+  text = "\u0022([^\u0022])*\u0022"
   doc = "#([^\r\n])*(\r)?\n"
  
 blanks:
@@ -67,6 +68,7 @@ comments:
 types:
  'id': Token<String>
  'text': Token<String>
+ 'quote': Token<String>
  'doc': Token<String>
  'value': Token<String>
  'lopt': int
@@ -74,11 +76,11 @@ types:
  'pipe': int
  'colon': int
  
- name: Token<String>
  expr: Expr
  instr: Expr
  instrs: List<Expr>
  block: List<Expr>
+ selector: Expr
  parameter: Parameter
  block_param: Lambda
  entry: Expr[]
@@ -108,24 +110,27 @@ productions:
  block = instrs?      { block }
        ;
        
- name = 'id'       { name_id }
-      | 'text'     { name_text }
-      ; 
-  
  block_param = ':' block                            { block_param_block }
              | '|' parameter/'comma'* ':' block     { block_param_lambda }
              ;
   
- parameter = name 'id'       { parameter_hint_id }
+ parameter = 'quote' 'id'    { parameter_hint_quote_id }
+           | 'id'   'id'     { parameter_hint_id_id }
            | 'id'            { parameter_id }
            ;
  
  entry = expr ':' expr   { entry }
        ;
  
+ selector = 'id'      { selector_id }
+          | 'quote'   { selector_quote }
+          ; 
+ 
  expr = 'value'                                               { expr_value }
+      | 'text'                                                { expr_text }
+      | 'quote'                                               { expr_quote }
       | '(' expr ')'                                          { expr_parens }
-      | name                                                  { expr_var_access }  
+      | 'id'                                                  { expr_var_access }  
       | 'id' '=' expr                          [assign]       { expr_var_assignment }
       
       | '@' 'id'                                              { expr_field_access }
@@ -133,7 +138,7 @@ productions:
       | '(' parameter/'comma'+ ':' block ')'                  { expr_lambda }
       
       | expr '(' expr/'comma'* block_param? ')'               { expr_funcall }
-      | expr '.' name '(' expr/'comma'* block_param? ')'      { expr_mthcall }
+      | expr '.' selector '(' expr/'comma'* block_param? ')'  { expr_mthcall }
       
       | 'while' '(' expr ':' block ')'                        { expr_while }
       | 'if' '(' expr ':' block ')'                           { expr_if }

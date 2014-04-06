@@ -64,28 +64,27 @@ public class ASTBuilder implements GrammarEvaluator {
 
     @Override
     public Token<String> text(CharSequence data) {
-      // the quotes will be removed in the rewriter
-      return new Token<>(data.toString(), getLineNumber());
+      return asStringToken(data);
+    }
+    @Override
+    public Token<String> quote(CharSequence data) {
+      return asStringToken(data);
     }
     @Override
     public Token<String> id(CharSequence data) {
-      return new Token<>(data.toString(), getLineNumber());
+      return asStringToken(data);
     }
     @Override
     public Token<String> value(CharSequence data) {
-      return new Token<>(data.toString(), getLineNumber());
+      return asStringToken(data);
     }
     @Override
     public Token<String> doc(CharSequence data) {
+      return asStringToken(data);
+    }
+    private Token<String> asStringToken(CharSequence data) {
       return new Token<>(data.toString(), getLineNumber());
     }
-  }
-  
-  private static String unquote(String name) {
-    if (name.charAt(0) != '\'') {
-      return name;
-    }
-    return name.substring(1, name.length() - 1);  
   }
   
   private final Path path;
@@ -144,12 +143,12 @@ public class ASTBuilder implements GrammarEvaluator {
   }
   
   @Override
-  public Token<String> name_id(Token<String> id) {
-    return id;
+  public Expr selector_id(Token<String> id) {
+    return new VarAccess(id.getValue(), id.getLineNumber()).allowString();
   }
   @Override
-  public Token<String> name_text(Token<String> text) {
-    return text;
+  public Expr selector_quote(Token<String> text) {
+    return new Literal(text.getValue(), text.getLineNumber());
   }
 
   @Override
@@ -160,6 +159,14 @@ public class ASTBuilder implements GrammarEvaluator {
   @Override
   public Expr expr_value(Token<String> value) {
     return new Literal(value.getValue(), value.getLineNumber());
+  }
+  @Override
+  public Expr expr_text(Token<String> text) {
+    return expr_value(text);
+  }
+  @Override
+  public Expr expr_quote(Token<String> quote) {
+    return expr_value(quote);
   }
 
   @Override
@@ -193,8 +200,12 @@ public class ASTBuilder implements GrammarEvaluator {
     return new Parameter(id.getValue(), null, id.getLineNumber());
   }
   @Override
-  public Parameter parameter_hint_id(Token<String> name, Token<String> id) {
-    return new Parameter(id.getValue(), unquote(name.getValue()), id.getLineNumber());
+  public Parameter parameter_hint_id_id(Token<String> id, Token<String> id2) {
+    return new Parameter(id2.getValue(), id.getValue(), id.getLineNumber());
+  }
+  @Override
+  public Parameter parameter_hint_quote_id(Token<String> text, Token<String> id) {
+    return new Parameter(id.getValue(), text.getValue().substring(1), text.getLineNumber());
   }
   @Override
   public Lambda block_param_lambda(int pipe, List<Parameter> parameter_star, int colon, List<Expr> block) {
@@ -203,11 +214,14 @@ public class ASTBuilder implements GrammarEvaluator {
   
   @Override
   public Expr expr_funcall(Expr expr, List<Expr> expr_star, Lambda lambda_optional) {
+    if (expr instanceof VarAccess) {
+      ((VarAccess)expr).allowString();
+    }
     return new MethodCall(new VarAccess("this", expr.getLineNumber()), expr, expr_star, lambda_optional, expr.getLineNumber());
   }
   @Override
-  public Expr expr_mthcall(Expr expr, Token<String> name, List<Expr> expr_star, Lambda lambda_optional) {
-    return new MethodCall(expr, expr_var_access(name), expr_star, lambda_optional, expr.getLineNumber());
+  public Expr expr_mthcall(Expr expr, Expr selector, List<Expr> expr_star, Lambda lambda_optional) {
+    return new MethodCall(expr, selector, expr_star, lambda_optional, expr.getLineNumber());
   }
   
   @Override
@@ -237,7 +251,7 @@ public class ASTBuilder implements GrammarEvaluator {
   }
   
   private static MethodCall op(Expr receiver, String selector, Expr... arguments) {
-    return new MethodCall(receiver, new VarAccess(selector, receiver.getLineNumber()), Arrays.asList(arguments), null, receiver.getLineNumber());
+    return new MethodCall(receiver, new Literal('\'' + selector, receiver.getLineNumber()), Arrays.asList(arguments), null, receiver.getLineNumber());
   }
   @Override
   public Expr expr_unary_neg(Expr expr) {

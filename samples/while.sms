@@ -1,4 +1,4 @@
-require('samples/core.sms')
+require("samples/core.sms")
 
 i = 0
 while(i < 5:

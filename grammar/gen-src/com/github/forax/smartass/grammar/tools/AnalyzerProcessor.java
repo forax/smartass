@@ -191,6 +191,12 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                                       stack.push_Object(id);
                                  return;
            }
+                 case quote: {
+         data=dataViewer.view(buffer);
+                                  com.github.forax.smartass.ast.Token<String> quote=terminalEvaluator.quote(data);
+                                      stack.push_Object(quote);
+                                 return;
+           }
                  case text: {
          data=dataViewer.view(buffer);
                                   com.github.forax.smartass.ast.Token<String> text=terminalEvaluator.text(data);
@@ -312,18 +318,6 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
-                    case name_id: { // not synthetic
-                                 Token<String> id=(Token<String>)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.name_id(id));
-                      
-          }
-          return;
-                    case name_text: { // not synthetic
-                                 Token<String> text=(Token<String>)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.name_text(text));
-                      
-          }
-          return;
                     case block_param_block: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
                                           int colon=stack.pop_int();
@@ -366,10 +360,17 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
-                    case parameter_hint_id: { // not synthetic
+                    case parameter_hint_quote_id: { // not synthetic
                                  Token<String> id=(Token<String>)stack.pop_Object();
-                                          Token<String> name=(Token<String>)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.parameter_hint_id(name,id));
+                                          Token<String> quote=(Token<String>)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.parameter_hint_quote_id(quote,id));
+                      
+          }
+          return;
+                    case parameter_hint_id_id: { // not synthetic
+                                 Token<String> id2=(Token<String>)stack.pop_Object();
+                                          Token<String> id=(Token<String>)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.parameter_hint_id_id(id,id2));
                       
           }
           return;
@@ -387,9 +388,33 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
+                    case selector_id: { // not synthetic
+                                 Token<String> id=(Token<String>)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.selector_id(id));
+                      
+          }
+          return;
+                    case selector_quote: { // not synthetic
+                                 Token<String> quote=(Token<String>)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.selector_quote(quote));
+                      
+          }
+          return;
                     case expr_value: { // not synthetic
                                  Token<String> value=(Token<String>)stack.pop_Object();
                                                 stack.push_Object(grammarEvaluator.expr_value(value));
+                      
+          }
+          return;
+                    case expr_text: { // not synthetic
+                                 Token<String> text=(Token<String>)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.expr_text(text));
+                      
+          }
+          return;
+                    case expr_quote: { // not synthetic
+                                 Token<String> quote=(Token<String>)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.expr_quote(quote));
                       
           }
           return;
@@ -400,8 +425,8 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
           }
           return;
                     case expr_var_access: { // not synthetic
-                                 Token<String> name=(Token<String>)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.expr_var_access(name));
+                                 Token<String> id=(Token<String>)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.expr_var_access(id));
                       
           }
           return;
@@ -531,9 +556,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                     case expr_mthcall: { // not synthetic
                                  Lambda block_param_optional_8=(Lambda)stack.pop_Object();
                                           List<Expr> expr_star_7=(List<Expr>)stack.pop_Object();
-                                          Token<String> name=(Token<String>)stack.pop_Object();
+                                          Expr selector=(Expr)stack.pop_Object();
                                           Expr expr=(Expr)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.expr_mthcall(expr,name,expr_star_7,block_param_optional_8));
+                                                stack.push_Object(grammarEvaluator.expr_mthcall(expr,selector,expr_star_7,block_param_optional_8));
                       
           }
           return;
@@ -838,6 +863,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                          case id:
               stack.pop_Object();
               return;
+                         case quote:
+              stack.pop_Object();
+              return;
                          case text:
               stack.pop_Object();
               return;
@@ -867,9 +895,6 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                          case block:
               stack.pop_Object();
               return;
-                         case name:
-              stack.pop_Object();
-              return;
                          case block_param:
               stack.pop_Object();
               return;
@@ -877,6 +902,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
               stack.pop_Object();
               return;
                          case entry:
+              stack.pop_Object();
+              return;
+                         case selector:
               stack.pop_Object();
               return;
                          case expr:

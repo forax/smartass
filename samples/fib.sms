@@ -1,6 +1,6 @@
-require('samples/core.sms')
+require("samples/core.sms")
 
-def(fib | x:
+def('fib | x:
   if(x < 2: 1: fib(x - 1) + fib(x - 2))
 )
 

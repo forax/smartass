@@ -1,12 +1,12 @@
-class('com.github.forax.smartass.rt.Script':
-  def(print | value:
-    'java.lang.System'.out().println(value)
+class('com.github.forax.smartass.rt.Script:
+  def('print | value:
+    'java.lang.System .out().println(value)
   )
 )
 
-class('java.lang.Integer':
-  def('+' | other:
-    'java.lang.Math'.addExact(this, other)
+class('java.lang.Integer:
+  def('+ | other:
+    'java.lang.Math .addExact(this, other)
   )
 )
 
