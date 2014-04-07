@@ -344,7 +344,7 @@ public class Rewriter {
   static byte[] rewrite(Function function, String nameHint, String className, ConstantDictionary dictionary) {
     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS|ClassWriter.COMPUTE_FRAMES);
     writer.visit(V1_8, ACC_PUBLIC|ACC_SUPER, className.replace('.',  '/'), null, "java/lang/Object", null);
-    Path path = function.getLambda().getPathOptional();
+    Path path = function.getLambdaOptional().getPathOptional();
     writer.visitSource((path == null)? "script": path.toString(), null);
     
     List<String> freeVars = function.getFreeVars();
@@ -360,7 +360,7 @@ public class Rewriter {
       env.registerSlot(parameter);
     }
     mv.visitCode();
-    VISITOR.visit(function.getLambda().getBlock(), env);
+    VISITOR.visit(function.getLambdaOptional().getBlock(), env);
     mv.visitInsn(ARETURN);
     mv.visitMaxs(-1, -1);
     mv.visitEnd();

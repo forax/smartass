@@ -1,4 +1,4 @@
-class('Point | x, y:
+class('Point, ['x, 'y]:
   def('x: @x)
   def('y: @y)
 )

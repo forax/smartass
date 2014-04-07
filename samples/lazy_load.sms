@@ -2,7 +2,7 @@ require("samples/core.sms")
 
 script = this
 
-class('Hello | message:
+class('Hello, ['message]:
   script.print("start init")
   
   def('sayHello:

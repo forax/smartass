@@ -8,14 +8,13 @@ import java.util.stream.Collectors;
 
 import com.github.forax.smartass.ast.Lambda;
 
-public class Function {
+public final class Function {
   private final List<String> freeVars;
   private final List<String> parameters;
   private final Lambda lambda;
   private final java.util.function.Function<Function, MethodHandle> createTarget;
   private String nameHint;
   private MethodHandle target;
-  private boolean enableTypeHints = true;
 
   private Function(List<String> freeVars, List<String> parameters, Lambda lambda, java.util.function.Function<Function, MethodHandle> createTarget) {
     this.freeVars = Objects.requireNonNull(freeVars);
@@ -55,16 +54,6 @@ public class Function {
     this.nameHint = nameHint;
   }
   
-  void disableTypeHints() {
-    if (target != null) {
-      throw new IllegalStateException("function code already generated");
-    }
-    this.enableTypeHints = false;
-  }
-  public boolean isTypeHintsEnabled() {
-    return enableTypeHints;
-  }
-  
   MethodHandle getTarget() {
     if (target != null) {
       return target;
@@ -79,7 +68,7 @@ public class Function {
   public List<String> getParameters() {
     return parameters;
   }
-  public Lambda getLambda() {
+  public Lambda getLambdaOptional() {
     return lambda;
   }
 }

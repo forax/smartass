@@ -1,15 +1,15 @@
 script = this
-class('com.github.forax.smartass.rt.Klass:
+class('com.github.forax.smartass.rt.Klass, []:
   def('accessor | name:
     def(name, script.fieldAccessor(name))
   )
 )
 
-class('Point | x, y:
+class('Point, ['x, 'y]:
   accessor('x)
   accessor('y)
 )
 
 p = Point(1, 2)
-p.x()
+p.x
 

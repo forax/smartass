@@ -10,7 +10,7 @@ public class Lambda extends Locatable implements Expr {
   private final Block block;
   private final Path path;
 
-  Lambda(List<Parameter> parameters, Block block, Path path, int lineNumber) {
+  public Lambda(List<Parameter> parameters, Block block, Path path, int lineNumber) {
     super(lineNumber);
     this.parameters = Collections.unmodifiableList(parameters);
     this.block = Objects.requireNonNull(block);

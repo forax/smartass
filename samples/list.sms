@@ -1,6 +1,6 @@
 require("samples/core.sms")
 
-class('Cons| element, next:
+class('Cons, ['element, 'next]:
   def('size:
     1 + @next.size()
   )
@@ -16,7 +16,7 @@ class('Cons| element, next:
   )
 )
 
-class('Nil:
+class('Nil, []:
   def('size: 0)
   def('filter | predicate: this)
   def('str: "")

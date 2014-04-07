@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class Klass {
+public final class Klass {
   private final String name;
   private final Klass staticKlass;
   private final LinkedHashMap<String, MethodHandle> fieldMap;
@@ -44,7 +44,9 @@ public class Klass {
       Object[] args = new Object[1 + parameters.size()];
       args[0] = klass;
       for(int i = 1; i < args.length; i++) {
-        args[i] = script.fieldAccessor(parameters.get(i - 1));
+        //args[i] = null;  // not a real arguments
+        //args[i] = script.fieldAccessor(parameters.get(i - 1));
+        args[i] = "BOMB";
       }
       function.getTarget().invokeWithArguments(args);
     };

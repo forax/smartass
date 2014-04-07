@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ import com.github.forax.smartass.ast.Lambda;
 import com.github.forax.smartass.ast.Parameter;
 import com.github.forax.smartass.rt.Rewriter.ProtoFun;
 
-public class Script {
+public final class Script {
   private final ConstantDictionary dictionary = new ConstantDictionary();
   private final ScriptClassLoader classLoader = new ScriptClassLoader();
   final HashMap<String, Klass> klassCache = new HashMap<>();
@@ -185,12 +186,10 @@ public class Script {
     //System.out.println("isTypeHintsEnabled:" + function.isTypeHintsEnabled());
     //System.out.println("function: freevars + receiver" + (1 + function.getFreeVars().size()));
     
-    if (function.isTypeHintsEnabled()) {
-      List<Klass> parameterTypeHints = resolveParameterTypeHints(function.getLambda().getParameters());
-      target = assertTypeHints(target, function.getFreeVars().size() + 1, parameterTypeHints);
-      
-      //System.out.println("assert typeHint for " + function.getNameHint());
-    }
+    List<Klass> parameterTypeHints = resolveParameterTypeHints(function.getLambdaOptional().getParameters());
+    target = assertTypeHints(target, function.getFreeVars().size() + 1, parameterTypeHints);
+    //System.out.println("assert typeHint for " + function.getNameHint());
+    
     return target;
   }
   
@@ -396,7 +395,7 @@ public class Script {
         if (selector instanceof String) {
           klass = getKlass(args[0]);
         } else {
-          throw new LinkageError("invalid selector " + selector + " of type " + selector.getClass());
+          throw new LinkageError("invalid selector " + selector + " of klass " + getKlass(selector).getName());
         }
       }
       klass.initialize();  // need to run klass initializers if they exist
@@ -506,26 +505,33 @@ public class Script {
   // ---------------------------
   
   @MethodInfo(name="class")
-  public Klass defClass(Object symbol, Function body) throws Throwable {
+  public Klass defClass(Object symbol, List<Object> params, Function body) throws Throwable {
     Objects.requireNonNull(symbol);
+    Objects.requireNonNull(params);
     Objects.requireNonNull(body);
+    
+    if (!body.getParameters().isEmpty()) {
+      throw new IllegalStateException("init function shoulld have no parameters");
+    }
+    
     Klass klass;
-    String name;
-    List<String> parameters = body.getParameters();
+    //List<String> parameters = body.getParameters();
     if (symbol instanceof String) { // new class !
-      name = (String)symbol;
+      String name = (String)symbol;
+      
+      List<String> parameters = params.stream().map(param -> (String)param).collect(Collectors.toList());
+      
       klass = Klass.create(name, null, parameters, new HashMap<>());
       klass.def("@init", Function.createFromMH(parameters, __ -> createKlassMH(klass)));
-      klassCache.put(name, klass);
+      
+      alias(name, klass);
+      
     } else {
       klass = (Klass)symbol;
-      name = klass.getName();
     }
+    
     if (body.getNameHint() == null) {
       body.setNameHint(klass.getName().replace('.',  '_') + "_init");
-    }
-    if (body.isTypeHintsEnabled()) {
-      body.disableTypeHints();  // don't try to verify parameters of the initializer
     }
     klass.registerInitializer(this, body);  // delay initialization
     return klass;
