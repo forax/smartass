@@ -54,7 +54,7 @@ FAQ
    a very limited environment, if you want the default environment
    you have to load it using the method require() 
    ```
-   require('samples/core.sms')
+   require("samples/core.sms")
    
    print(1 + 2)
    ```
