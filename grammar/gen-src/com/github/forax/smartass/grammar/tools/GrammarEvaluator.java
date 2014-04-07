@@ -151,6 +151,11 @@ public interface GrammarEvaluator {
    */
   public Expr expr_mthcall(Expr expr,Expr selector,List<Expr> expr_star,Lambda block_param_optional);
   /** This methods is called after the reduction of the non terminal expr
+   *  by the grammar production expr_fieldcall.
+   *  <code>expr ::= expr dot selector</code>
+   */
+  public Expr expr_fieldcall(Expr expr,Expr selector);
+  /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_while.
    *  <code>expr ::= _while lpar expr colon block rpar</code>
    */

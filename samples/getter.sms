@@ -1,0 +1,11 @@
+require("samples/core.sms")
+
+class('A | x :
+  def('x: @x)
+)
+
+a = A(3)
+print(a.x)
+print(a.x())
+
+

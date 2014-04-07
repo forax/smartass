@@ -562,6 +562,13 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
+                    case expr_fieldcall: { // not synthetic
+                                 Expr selector=(Expr)stack.pop_Object();
+                                          Expr expr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.expr_fieldcall(expr,selector));
+                      
+          }
+          return;
                     case expr_while: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
                                           int colon=stack.pop_int();

@@ -223,6 +223,10 @@ public class ASTBuilder implements GrammarEvaluator {
   public Expr expr_mthcall(Expr expr, Expr selector, List<Expr> expr_star, Lambda lambda_optional) {
     return new MethodCall(expr, selector, expr_star, lambda_optional, expr.getLineNumber());
   }
+  @Override
+  public Expr expr_fieldcall(Expr expr, Expr selector) {
+    return new MethodCall(expr, selector, Collections.emptyList(), null, expr.getLineNumber());
+  }
   
   @Override
   public Expr expr_while(Expr expr, int colon, List<Expr> block) {

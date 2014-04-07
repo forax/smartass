@@ -12,13 +12,14 @@ imports:
   
 priorities:
  dot = 8 left
- parens = 7 left
- unary = 6 left
- star = 5 left
- plus = 4 left
- eq = 3 left
- lambda = 2 right
- assign = 1 right
+ parens = 8 left
+ unary = 7 left
+ star = 6 left
+ plus = 5 left
+ eq = 4 left
+ lambda = 3 right
+ assign = 2 right
+ field = 1 none
 
 tokens:
   plus= '\+'                   [plus]
@@ -139,6 +140,7 @@ productions:
       
       | expr '(' expr/'comma'* block_param? ')'               { expr_funcall }
       | expr '.' selector '(' expr/'comma'* block_param? ')'  { expr_mthcall }
+      | expr '.' selector                      [field]        { expr_fieldcall }
       
       | 'while' '(' expr ':' block ')'                        { expr_while }
       | 'if' '(' expr ':' block ')'                           { expr_if }

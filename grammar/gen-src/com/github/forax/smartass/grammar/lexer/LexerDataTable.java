@@ -125,7 +125,7 @@ public class LexerDataTable {
     RuleData rcurl = new RuleData(rcurlMain, null, 26, false);
     init_whileMainAccepts();
     init_whileMainTransitions();
-    CharRegexTable _whileMain = new CharRegexTable(2, _whileMainTransitions, _whileMainAccepts);
+    CharRegexTable _whileMain = new CharRegexTable(1, _whileMainTransitions, _whileMainAccepts);
     RuleData _while = new RuleData(_whileMain, null, 27, false);
     init_ifMainAccepts();
     init_ifMainTransitions();
@@ -488,7 +488,7 @@ public class LexerDataTable {
     
   private int[][] _whileMainTransitions;
   private void init_whileMainTransitions() {
-    _whileMainTransitions = new int[][] {{0,-1},{0,-1,105,4,106,-1},{0,-1,119,5,120,-1},{0,-1,101,0,102,-1},{0,-1,108,3,109,-1},{0,-1,104,1,105,-1}};
+    _whileMainTransitions = new int[][] {{0,-1},{0,-1,119,5,120,-1},{0,-1,105,4,106,-1},{0,-1,101,0,102,-1},{0,-1,108,3,109,-1},{0,-1,104,2,105,-1}};
   }
   
   private boolean[] _ifMainAccepts;
@@ -528,7 +528,7 @@ public class LexerDataTable {
     
   private int[][] valueMainTransitions;
   private void initvalueMainTransitions() {
-    valueMainTransitions = new int[][] {{0,-1},{0,-1,48,1,58,-1},{0,-1,46,10,47,-1,48,2,58,-1},{0,-1,97,8,98,-1},{0,-1,117,6,118,-1},{0,-1,115,6,116,-1},{0,-1,101,0,102,-1},{0,-1,114,4,115,-1},{0,-1,108,5,109,-1},{0,-1,48,2,58,-1,102,3,103,-1,116,7,117,-1},{0,-1,48,1,58,-1}};
+    valueMainTransitions = new int[][] {{0,-1},{0,-1,48,1,58,-1},{0,-1,46,10,47,-1,48,2,58,-1},{0,-1,97,8,98,-1},{0,-1,115,6,116,-1},{0,-1,117,6,118,-1},{0,-1,101,0,102,-1},{0,-1,114,5,115,-1},{0,-1,108,4,109,-1},{0,-1,48,2,58,-1,102,3,103,-1,116,7,117,-1},{0,-1,48,1,58,-1}};
   }
   
   private boolean[] idMainAccepts;
