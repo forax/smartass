@@ -1,0 +1,312 @@
+require("samples/core.sms")
+
+alias('int, 'java.lang.Integer)
+alias('double, 'java.lang.Double)
+alias('List, 'java.util.List)
+alias('Function, 'com.github.forax.smartass.rt.Function)
+
+alias('Math, 'java.lang.Math)
+
+script = this
+
+class('Vector, {double 'x, double 'y, double 'z}:
+    def('x: @x)
+    def('y: @y)
+    def('z: @z)
+
+    def('* | double k: 
+      Vector(k * @x, k * @y, k * @z)
+    )
+
+    def('- | Vector v:
+      Vector(@x - v.x, @y - v.y, @z - v.z)
+    )
+
+    def('+ | Vector v:
+      Vector(@x + v.x, @y + v.y, @z + v.z)
+    )
+
+    def('dot | Vector v:
+      @x * v.x + @y * v.y + @z * v.z
+    )
+
+    def('mag:
+      Math.sqrt(@x * @x + @y * @y + @z * @z)
+    )
+
+    def('norm:
+      mag = mag()
+      div = if(mag == 0.0: Math.POSITIVE_INFINITY: 1.0 / mag)
+      this * div
+    )
+
+    def('cross | Vector v:
+      Vector(@y * v.z - @z * v.y,
+             @z * v.x - @x * v.z,
+             @x * v.y - @y * v.x)
+    )
+)
+
+class('Color, {double 'r, double 'g, double 'b}:
+    def('r: @r)
+    def('g: @g)
+    def('b: @b)
+
+    def('scale | double k:
+      Color(k * @r, k * @g, k * @b)
+    )
+
+    def('+ | Color c:
+      Color(@r + c.r, @g + c.g, @b + c.b)
+    )
+
+    def('* | Color c:
+      Color(@r * c.r, @g * c.g, @b * c.b)
+    )
+
+    def('toDrawingColor:
+      legalize = (d: if(d > 1.0: 1.0 : d))
+      Color(
+        Math.floor(legalize(@r) * 255),
+        Math.floor(legalize(@g) * 255),
+        Math.floor(legalize(@b) * 255)
+        )
+    )
+)
+
+WHITE = Color(1.0, 1.0, 1.0)
+GREY = Color(0.5, 0.5, 0.5)
+BLACK = Color(0.0, 0.0, 0.0)
+BACKGROUND = BLACK
+DEFAULT_COLOR = BLACK
+
+class('_Camera, {Vector 'pos, Vector 'forward, Vector 'right, Vector 'up}:
+  def('pos: @pos)
+  def('forward: @forward)
+  def('right: @right)
+  def('up: @up)
+)
+def('Camera | Vector pos, Vector lookAt:
+  down = Vector(0.0, -1.0, 0.0)
+  forward = (lookAt - pos).norm()
+  right = forward.cross(down).norm() * 1.5 
+  up = forward.cross(right).norm() * 1.5
+  _Camera(pos, forward, right, up)
+)
+
+class('Ray, {Vector 'start, Vector 'dir}:
+  def('start: @start)
+  def('dir: @dir)
+)
+class('Intersection, {'thing, Ray 'ray, double 'dist}:
+  def('thing: @thing)
+  def('ray: @ray)
+  def('dist: @dist)
+)
+class('Surface, {Function 'diffuse, Function 'specular, Function 'reflect, double 'roughness}:
+  def('diffuse: @diffuse)
+  def('specular: @specular)
+  def('roughness: @roughness)
+)
+class('Thing, {Function 'intersect, Function 'normal, Surface 'surface}:
+  def('intersect: @intersect)
+  def('normal: @normal)
+  def('surface: @surface)
+)
+class('Light, {Vector 'pos, Color 'color}:
+  def('pos: @pos)
+  def('color: @color)
+)
+class('Scene, {List 'things, List 'lights, _Camera 'camera}:
+  def('things: @things)
+  def('lights: @lights)
+  def('camera: @camera)
+)
+
+class('_Sphere, {Vector 'center, double 'radius2, Surface 'surface}:
+    def('normal | pos:
+      (pos - @center).norm()
+    )
+
+    def('intersect | ray:
+      eo = @center - ray.start
+      v = ray.dir.dot(eo)
+      dist = 0.0;
+      if(v >= 0.0:
+        disc = @radius2 - (eo.dot(eo) - v * v)
+        if(disc >= 0.0:
+          dist = v - Math.sqrt(disc)
+        )
+      )
+      if(dist == 0: null: Intersection(this, ray, dist))
+    )
+)
+def('Sphere | Vector center, double radius, Surface surface:
+  _Sphere(center, radius * radius, surface)
+) 
+
+class('Plane, {Vector 'norm, double 'offset, Surface 'surface}:
+   def('surface: @surface)
+   def('normal | Vector pos: @norm)
+   
+   def('intersect | Ray ray:
+     denom = @norm.dot(ray.dir)
+     if(denom > 0.0:
+       null:
+       dist = (@norm.dot(ray.start) + @offset) / (-denom)
+       Intersection(this, ray, dist)
+     )
+   )
+)
+
+class('_Surfaces, {}:
+    shiny = Surface(
+      (Vector pos: WHITE),        // diffuse
+      (Vector pos: GREY),         // specular
+      (Vector pos: 0.7),          // reflect
+      250.0                       // roughness
+      )
+    def('shiny: shiny)
+
+    checkerboard = Surface(
+        (Vector pos:              // diffuse
+            if((Math.floor(pos.z) + Math.floor(pos.x)) % 2.0 != 0.0:
+              WHITE
+            :
+              BLACK
+            )
+        ),
+        (Vector pos: WHITE),      // specular
+        (Vector pos:              // reflect
+            if((Math.floor(pos.z) + Math.floor(pos.x)) % 2.0 != 0.0:
+                0.1
+            :
+                0.7
+            )
+        ),
+        150.0                     // roughness
+    )
+    def('checkerboard: checkerboard)
+)
+Surfaces = _Surfaces()
+
+class('RayTracer, {}:
+    MAX_DEPTH = 5;
+
+    intersections = (Ray ray, Scene scene:
+      closest = 'java.lang.Double .POSITIVE_INFINITY
+      closestInter = null
+      things = scene.things
+      i = 0
+      while(i < things.size():
+        inter = things.get(i).intersect(ray)
+        if(inter:
+          if(inter.dist < closest:
+            closestInter = inter
+            closest = inter.dist
+          )
+        )
+        i = i + 1
+      )
+      closestInter
+    )
+
+    testRay = (Ray ray, Scene scene:
+      isect = intersections(ray, scene);
+      if(isect: isect.dist)
+    )
+    
+    traceRay = (Ray ray, Scene scene, int depth:
+      isect = intersections(ray, scene);
+      if(isect: shade(isect, scene, depth): BACKGROUND)
+    )
+
+    getReflectionColor = (thing, Vector pos, Vector normal, Vector rd, Scene scene, int depth:
+      thing.surface.reflect(pos).scale(traceRay(Ray(pos, rd), scene, depth + 1))
+    )
+
+    getNaturalColor = (thing, Vector pos, Vector norm, Vector rd, Scene scene:
+        addLight = (Color col, Light light:
+            ldis = light.pos - pos
+            livec = ldis.norm()
+            neatIsect = testRay(Ray(pos, livec), scene)
+            isInShadow = if(neatIsect: neatIsect <= ldis.mag: false)
+            if (isInShadow:
+              return col
+            :
+              illum = norm.dot(livec)
+              lcolor = if(illum > 0: light.color.scale(illum)
+                                   : DEFAULT_COLOR)
+              specular = rd.norm().dot(livec)
+              scolor = if(specular > 0: light.color.scale(Math.pow(specular, thing.surface.roughness))
+                                      : DEFAULT_COLOR)
+              col + lcolor * thing.surface.diffuse(pos) + scolor * thing.surface.specular(pos)
+            )
+        )
+        scene.lights.stream.reduce(DEFAULT_COLOR, addLight)
+    )
+
+    shade = (Intersection isect, Scene scene, int depth:
+        d = isect.ray.dir;
+        pos = isect.dist * d + isect.ray.start
+        normal = isect.thing.normal(pos)
+        reflectDir = d - normal * normal.dot(d) * 2;
+        naturalColor = BACKGROUND + getNaturalColor(isect.thing, pos, normal, reflectDir, scene)
+        reflectedColor = if(depth >= MAX_DEPTH: GREY: getReflectionColor(isect.thing, pos, normal, reflectDir, scene, depth))
+        naturalColor + reflectedColor
+    )
+
+    def('render |Scene scene, ctx, int screenWidth, int screenHeight:
+        width = screenWidth.doubleValue
+        height = screenHeight.doubleValue
+        getPoint = (double x, double y, _Camera camera:
+            recenterX = (x: (x - (width / 2.0)) / 2.0 / width)
+            recenterY = (y: -(y - (height / 2.0)) / 2.0 / height)
+            (camera.forward + camera.right * recenterX(x)  + camera.up * recenterY(y)).norm()
+        )
+        y = 0;
+        while(y < screenHeight:
+          x = 0
+          while(x < screenWidth:
+            color = traceRay(Ray(scene.camera.pos(), getPoint(x.doubleValue, y.doubleValue, scene.camera)), scene, 0)
+            c = color.toDrawingColor()
+            //ctx.fillRect(x, y, x + 1, y + 1, c.r, c.g, c.b);
+            x = x + 1
+          )
+          y = y + 1
+        )
+    )
+)
+
+
+def('defaultScene:
+    Scene(
+        [
+          Plane(Vector(0.0, 1.0, 0.0), 0.0, Surfaces.checkerboard),
+          Sphere(Vector(0.0, 1.0, -0.25), 1.0, Surfaces.shiny),
+          Sphere(Vector(-1.0, 0.5, 1.5), 0.5, Surfaces.shiny)
+        ],
+        [
+          Light(Vector(-2.0, 2.5, 0.0), Color(0.49, 0.07, 0.07)),
+          Light(Vector(1.5, 2.5, 1.5), Color(0.07, 0.07, 0.49)),
+          Light(Vector(1.5, 2.5, -1.5), Color(0.07, 0.49, 0.071)),
+          Light(Vector(0.0, 3.5, 0.0), Color(0.21, 0.21, 0.35))
+        ],
+        Camera(Vector(3.0, 2.0, 4.0), Vector(-1.0, 0.5, 0.0))
+    )
+)
+
+def('exec:
+    //canv = document.createElement("canvas");
+    //canv.width = 512;
+    //canv.height = 512;
+    //document.body.appendChild(canv);
+    //var ctx = canv.getContext("2d");
+    //var rayTracer = new RayTracer();
+    //return rayTracer.render(defaultScene(), ctx, 512, 512);
+    ctx = null
+    rayTracer = RayTracer()
+    rayTracer.render(defaultScene(), ctx, 256, 256)
+)
+
+exec()
