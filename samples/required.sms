@@ -1,10 +1,10 @@
-class('com.github.forax.smartass.rt.Script, []:
+class('com.github.forax.smartass.rt.Script, {}:
   def('print | value:
     'java.lang.System .out().println(value)
   )
 )
 
-class('java.lang.Integer, []:
+class('java.lang.Integer, {}:
   def('+ | other:
     'java.lang.Math .addExact(this, other)
   )

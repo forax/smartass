@@ -1,6 +1,6 @@
 require("samples/core.sms")
 
-class('A, ['x]:
+class('A, {'x}:
   def('x: @x)
 )
 

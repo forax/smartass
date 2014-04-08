@@ -1,10 +1,10 @@
-class('java.lang.String, []:
+class('java.lang.String, {}:
   def('+ | other:
     concat(other)
   )
 )
 
-class('Book, ['author, 'title]:
+class('Book, {'author, 'title}:
   def('str:
     @title + ": " + @author
   )

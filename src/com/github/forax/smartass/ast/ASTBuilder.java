@@ -245,13 +245,26 @@ public class ASTBuilder implements GrammarEvaluator {
   public Expr expr_list(int lopt, List<Expr> expr_star) {
     return new Data(DataKind.LIST, expr_star, lopt);
   }
+  
   @Override
-  public Expr[] entry(Expr expr, int colon, Expr expr2) {
-    return new Expr[] { expr, expr2 };
+  public Expr[] entry_key_value(Expr key, int colon, Expr value) {
+    return new Expr[] { key, value };
+  }
+  @Override
+  public Expr[] entry_hint_id(Expr expr, Token<String> id) {
+    return new Expr[] { new Literal(id.getValue(), id.getLineNumber()), expr };
+  }
+  @Override
+  public Expr[] entry_hint_quote(Expr expr, Token<String> quote) {
+    return new Expr[] { new Literal(quote.getValue(), quote.getLineNumber()), expr };
+  }
+  @Override
+  public Expr[] entry_expr(Expr expr) {
+    return new Expr[] { expr,  new Literal("null", expr.getLineNumber()) };
   }
   @Override
   public Expr expr_map(int lcurl, List<Expr[]> entry_star) {
-    return new Data(DataKind.LIST, entry_star.stream().flatMap(array -> Stream.of(array[0], array[1])).collect(Collectors.toList()), lcurl);
+    return new Data(DataKind.MAP, entry_star.stream().flatMap(array -> Stream.of(array[0], array[1])).collect(Collectors.toList()), lcurl);
   }
   
   private static MethodCall op(Expr receiver, String selector, Expr... arguments) {

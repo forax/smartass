@@ -150,9 +150,13 @@ public class Rewriter {
             String value = expr.getValue();
             if (value.charAt(0) == '\'') {
               env.emitIndy("bsm_symbol", "symbolOrString", "()Ljava/lang/Object;", value.substring(1));
-            } else {
-              env.emitIndy("bsm_const", "const", "()Ljava/lang/Object;", value);
+              return;
             }
+            if (value.equals("null")) {
+              env.emitInsn(ACONST_NULL);
+              return;   
+            }
+            env.emitIndy("bsm_const", "const", "()Ljava/lang/Object;", value);
           })
           .when(VarAccess.class, (expr, env) -> {
             String name = expr.getId();

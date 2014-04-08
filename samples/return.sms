@@ -1,6 +1,6 @@
 require("samples/core.sms")
 
-class('Fib, []:
+class('Fib, {}:
   def('fib| n:
     if(n<2:
       return 1

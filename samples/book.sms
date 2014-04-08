@@ -1,4 +1,4 @@
-class('Book, ['author, 'title]:
+class('Book, {'author, 'title}:
   def('str:
     @title.concat(": ").concat(@author)
   )

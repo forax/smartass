@@ -54,7 +54,7 @@ tokens:
   _return = 'return'
   _throw = 'throw'
   
-  value = "([0-9]+(\.[0-9]+)?)|true|false"
+  value = "([0-9]+(\.[0-9]+)?)|null|true|false"
   id = "([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*"
   quote = "'[^()[\]{}':,| \t\r\n;]+"
   text = "\u0022([^\u0022])*\u0022"
@@ -116,12 +116,15 @@ productions:
              ;
   
  parameter = 'quote' 'id'    { parameter_hint_quote_id }
-           | 'id'   'id'     { parameter_hint_id_id }
+           | 'id' 'id'       { parameter_hint_id_id }
            | 'id'            { parameter_id }
            ;
  
- entry = expr ':' expr   { entry }
-       ;
+ entry = expr ':' expr   { entry_key_value }
+       | expr 'id'       { entry_hint_id }
+       | expr 'quote'    { entry_hint_quote }
+       | expr            { entry_expr }
+       ;      
  
  selector = 'id'      { selector_id }
           | 'quote'   { selector_quote }

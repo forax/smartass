@@ -5,3 +5,8 @@ def('sum | 'java.lang.Integer a, 'java.lang.Integer b:
 )
 
 print(sum(2, 3))
+
+class('Sum, {'java.lang.Integer 'a, 'java.lang.Integer 'b}:
+  def('sum: @a + @b)
+)
+print(Sum(2, 3).sum)

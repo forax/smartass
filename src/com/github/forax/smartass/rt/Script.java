@@ -21,7 +21,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -485,7 +487,7 @@ public final class Script {
   
   @SuppressWarnings("unused")  // called from a method handle
   private static Object asMap(Object[] values) {
-    HashMap<Object, Object> map = new HashMap<>();
+    LinkedHashMap<Object, Object> map = new LinkedHashMap<>();
     for(int i = 0; i < values.length; i+=2) {
       map.put(values[i], values[i + 1]);
     }
@@ -505,9 +507,9 @@ public final class Script {
   // ---------------------------
   
   @MethodInfo(name="class")
-  public Klass defClass(Object symbol, List<Object> params, Function body) throws Throwable {
+  public Klass defClass(Object symbol, Map<String,Object> parameterMap, Function body) throws Throwable {
     Objects.requireNonNull(symbol);
-    Objects.requireNonNull(params);
+    Objects.requireNonNull(parameterMap);
     Objects.requireNonNull(body);
     
     if (!body.getParameters().isEmpty()) {
@@ -515,17 +517,25 @@ public final class Script {
     }
     
     Klass klass;
-    //List<String> parameters = body.getParameters();
     if (symbol instanceof String) { // new class !
       String name = (String)symbol;
-      
-      List<String> parameters = params.stream().map(param -> (String)param).collect(Collectors.toList());
-      
+      List<String> parameters = parameterMap.keySet().stream().collect(Collectors.toList());
       klass = Klass.create(name, null, parameters, new HashMap<>());
-      klass.def("@init", Function.createFromMH(parameters, __ -> createKlassMH(klass)));
-      
+      klass.def("@init", Function.createFromMH(parameters,
+          __ -> {
+            List<Klass> typeHints = parameterMap.values().stream().map(typeName -> {
+              if (typeName instanceof String) {
+                Klass typeHint = resolveKlass((String)typeName);
+                if (typeHint == null) {
+                  throw new LinkageError("invalid type name  " + typeName);
+                }
+                return typeHint;  
+              }
+              return (Klass)typeName;  // may be null
+            }).collect(Collectors.toList());
+            return assertTypeHints(createKlassMH(klass), 1, typeHints);
+          }));
       alias(name, klass);
-      
     } else {
       klass = (Klass)symbol;
     }

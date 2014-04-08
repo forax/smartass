@@ -380,11 +380,31 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
-                    case entry: { // not synthetic
+                    case entry_key_value: { // not synthetic
                                  Expr expr2=(Expr)stack.pop_Object();
                                           int colon=stack.pop_int();
                                           Expr expr=(Expr)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.entry(expr,colon,expr2));
+                                                stack.push_Object(grammarEvaluator.entry_key_value(expr,colon,expr2));
+                      
+          }
+          return;
+                    case entry_hint_id: { // not synthetic
+                                 Token<String> id=(Token<String>)stack.pop_Object();
+                                          Expr expr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.entry_hint_id(expr,id));
+                      
+          }
+          return;
+                    case entry_hint_quote: { // not synthetic
+                                 Token<String> quote=(Token<String>)stack.pop_Object();
+                                          Expr expr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.entry_hint_quote(expr,quote));
+                      
+          }
+          return;
+                    case entry_expr: { // not synthetic
+                                 Expr expr=(Expr)stack.pop_Object();
+                                                stack.push_Object(grammarEvaluator.entry_expr(expr));
                       
           }
           return;

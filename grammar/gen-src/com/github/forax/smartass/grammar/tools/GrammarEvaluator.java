@@ -81,10 +81,25 @@ public interface GrammarEvaluator {
    */
   public Parameter parameter_id(Token<String> id);
   /** This methods is called after the reduction of the non terminal entry
-   *  by the grammar production entry.
+   *  by the grammar production entry_key_value.
    *  <code>entry ::= expr colon expr</code>
    */
-  public Expr[] entry(Expr expr,int colon,Expr expr2);
+  public Expr[] entry_key_value(Expr expr,int colon,Expr expr2);
+  /** This methods is called after the reduction of the non terminal entry
+   *  by the grammar production entry_hint_id.
+   *  <code>entry ::= expr id</code>
+   */
+  public Expr[] entry_hint_id(Expr expr,Token<String> id);
+  /** This methods is called after the reduction of the non terminal entry
+   *  by the grammar production entry_hint_quote.
+   *  <code>entry ::= expr quote</code>
+   */
+  public Expr[] entry_hint_quote(Expr expr,Token<String> quote);
+  /** This methods is called after the reduction of the non terminal entry
+   *  by the grammar production entry_expr.
+   *  <code>entry ::= expr</code>
+   */
+  public Expr[] entry_expr(Expr expr);
   /** This methods is called after the reduction of the non terminal selector
    *  by the grammar production selector_id.
    *  <code>selector ::= id</code>
