@@ -7,5 +7,14 @@ value = {
     { "id": 4, "name": "joe"}
   ]
 }
-
 print(value)
+
+lenient_value = {
+  users: [
+    { id: 2, name: bob},
+    { id: 3, name: alice},
+    { id: 4, name: joe}
+  ]
+}
+print(lenient_value)
+

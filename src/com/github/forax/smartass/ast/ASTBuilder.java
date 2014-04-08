@@ -94,6 +94,13 @@ public class ASTBuilder implements GrammarEvaluator {
     this.path = path;
   }
   
+  private static Expr allowString(Expr expr) {
+    if (expr instanceof VarAccess) {
+      return ((VarAccess)expr).allowString();
+    }
+    return expr;
+  }
+  
   @Override
   public void acceptScript() {
     // cool
@@ -214,10 +221,7 @@ public class ASTBuilder implements GrammarEvaluator {
   
   @Override
   public Expr expr_funcall(Expr expr, List<Expr> expr_star, Lambda lambda_optional) {
-    if (expr instanceof VarAccess) {
-      ((VarAccess)expr).allowString();
-    }
-    return new MethodCall(new VarAccess("this", expr.getLineNumber()), expr, expr_star, lambda_optional, expr.getLineNumber());
+    return new MethodCall(new VarAccess("this", expr.getLineNumber()), allowString(expr), expr_star, lambda_optional, expr.getLineNumber());
   }
   @Override
   public Expr expr_mthcall(Expr expr, Expr selector, List<Expr> expr_star, Lambda lambda_optional) {
@@ -248,15 +252,15 @@ public class ASTBuilder implements GrammarEvaluator {
   
   @Override
   public Expr[] entry_key_value(Expr key, int colon, Expr value) {
-    return new Expr[] { key, value };
+    return new Expr[] { allowString(key), allowString(value) };
   }
   @Override
   public Expr[] entry_hint_id(Expr expr, Token<String> id) {
-    return new Expr[] { new Literal(id.getValue(), id.getLineNumber()), expr };
+    return new Expr[] { new VarAccess(id.getValue(), id.getLineNumber()).allowString(), allowString(expr) };
   }
   @Override
   public Expr[] entry_hint_quote(Expr expr, Token<String> quote) {
-    return new Expr[] { new Literal(quote.getValue(), quote.getLineNumber()), expr };
+    return new Expr[] { new Literal(quote.getValue(), quote.getLineNumber()), allowString(expr) };
   }
   @Override
   public Expr[] entry_expr(Expr expr) {

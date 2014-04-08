@@ -16,8 +16,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractList;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,7 +27,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.RandomAccess;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -472,26 +476,56 @@ public final class Script {
   }
   
   @SuppressWarnings("unused")  // called from a method handle
-  private static Object asList(Object[] values) {
-    return new AbstractList<Object>() {
+  private static Object asList(Object[] array) {
+    class SmartList extends AbstractList<Object> implements RandomAccess {
       @Override
       public Object get(int index) {
-        return values[index];
+        return array[index];
       }
       @Override
       public int size() {
-        return values.length;
+        return array.length;
       }
-    };
+    }
+    return new SmartList();
   }
   
   @SuppressWarnings("unused")  // called from a method handle
-  private static Object asMap(Object[] values) {
+  private static Object asMap(Object[] array) {
     LinkedHashMap<Object, Object> map = new LinkedHashMap<>();
-    for(int i = 0; i < values.length; i+=2) {
-      map.put(values[i], values[i + 1]);
+    for(int i = 0; i < array.length; i+=2) {
+      map.put(array[i], array[i + 1]);
     }
-    return Collections.unmodifiableMap(map);
+    return new AbstractMap<Object,Object>() {
+      @Override public int size()                                { return map.size(); }
+      @Override public boolean isEmpty()                         { return map.isEmpty(); }
+      @Override public Object get(Object key)                    { return map.get(key); }
+      @Override public Object getOrDefault(Object key, Object defaultValue) { return map.getOrDefault(key, defaultValue); } 
+      @Override public boolean containsKey(Object key)           { return map.containsKey(key); }
+      @Override public void forEach(BiConsumer<? super Object, ? super Object> action) { map.forEach(action); }
+      
+      private transient Set<Object> keySet;
+      @Override public Set<Object> keySet()                      { return (keySet !=null)? keySet: (keySet = Collections.unmodifiableSet(map.keySet())); }
+      private transient Collection<Object> values;
+      @Override public Collection<Object> values()               { return (values !=null)? values: (values = Collections.unmodifiableCollection(map.values())); }
+      private transient Set<Map.Entry<Object, Object>> entrySet;
+      @Override public Set<Map.Entry<Object, Object>> entrySet() { return (entrySet !=null)? entrySet: (entrySet = Collections.unmodifiableSet(map.entrySet())); }
+    
+      private String asJsonValue(Object o) {
+        if (o instanceof String) {
+          return '\"' + o.toString() + '"';
+        }
+        return String.valueOf(o);
+      }
+      
+      @Override
+      public String toString() {
+        return map.entrySet()
+                  .stream()
+                  .map(entry -> asJsonValue(entry.getKey()) + ": " + asJsonValue(entry.getValue()))
+                  .collect(Collectors.joining(",", "{", "}"));
+      }
+    };
   }
   
   @MethodInfo(hidden=true)
@@ -519,7 +553,7 @@ public final class Script {
     Klass klass;
     if (symbol instanceof String) { // new class !
       String name = (String)symbol;
-      List<String> parameters = parameterMap.keySet().stream().collect(Collectors.toList());
+      List<String> parameters = parameterMap.keySet().stream().map(key -> (String)key).collect(Collectors.toList());
       klass = Klass.create(name, null, parameters, new HashMap<>());
       klass.def("@init", Function.createFromMH(parameters,
           __ -> {
