@@ -95,7 +95,7 @@ SmartAss Reference Guide
    first line and a Klass in the 4th line because a call to 'class'
    register the newly created Klass in the environment.
    ```
-   class('Book, ['author, 'title]:
+   class('Book, {'author, 'title}:
    )
    
    book = Book("Dan Brown", "Da Vinci Code")
@@ -115,7 +115,7 @@ SmartAss Reference Guide
    inside the class Script. By example, the following code creates
    a class Book with two fields author and name, 
    ```
-   class('Book, ['author, 'title]:
+   class('Book, {'author, 'title}:
      // code
    )
    ```
@@ -130,7 +130,7 @@ SmartAss Reference Guide
    Like in Ruby, the syntax to access to a fied inside a class is @field.
    By example, to get the author of a Book, one can write
    ```
-   class('Book, ['author, 'title]:
+   class('Book, {'author, 'title}:
      def('author: @author )
    )
    b = Book("Dan Brown", "Da Vinci Code")
@@ -140,10 +140,10 @@ SmartAss Reference Guide
    Like in Ruby, you can re-open any classes at your will,
    so the following code is valid
    ```
-   class('Book, ['author, 'title]:
+   class('Book, {'author, 'title}:
      def('author: @author )
    )
-   class('Book, []:                // re-open the class Book
+   class('Book, {}:                // re-open the class Book
      def('title: @title )
    )
    ```
@@ -156,7 +156,7 @@ SmartAss Reference Guide
    A java class can be re-open too.
    By example, you can add a method '+' to java.lang.String
    ```
-   class('java.lang.String, []:
+   class('java.lang.String, {}:
      def('+ | other:
        this.concat(other)
      )
@@ -169,7 +169,7 @@ SmartAss Reference Guide
    of 'this' ('this' being the newly created Klass).
    ```
    script = this
-   class('Book, ['author, 'title]:
+   class('Book, {'author, 'title}:
      def('author: @author )
      
      script.print(this.getName())   
@@ -203,13 +203,13 @@ SmartAss Reference Guide
    In SmartAss, the class creation is in fact just a method call with a lambda.
    By example, the definition of the class Book
    ```
-   class(`Book, ['author, 'title]:
+   class(`Book, {'author, 'title}:
    )
    ```
    can be re-written as a method call on the current script object
    with the symbol Book. The code above is just a shortcut for this code
    ```
-   this.class('Book, ['author, 'title], (:
+   this.class('Book, {'author, 'title}, (:
    ))
    ```
    
