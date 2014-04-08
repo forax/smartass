@@ -334,7 +334,7 @@ SmartAss Reference Guide
 
    
 
-  * if, while, return and throw
+ * if, while, return and throw
  
    As a concession to practicality, SmartAss provide these 4 constructs
    that you will find in most imperative languages.
