@@ -34,21 +34,13 @@ public final class Klass {
     void accept(Klass klass) throws Throwable;
   }
   
-  void registerInitializer(Script script, Function function) {
+  void registerInitializer(Function function) {
     Initializer initializer = this.initializer;
     this.initializer = klass -> {
       if (initializer != null) {  // call previous initializer
         initializer.accept(klass);
       }
-      List<String> parameters = function.getParameters();
-      Object[] args = new Object[1 + parameters.size()];
-      args[0] = klass;
-      for(int i = 1; i < args.length; i++) {
-        //args[i] = null;  // not a real arguments
-        //args[i] = script.fieldAccessor(parameters.get(i - 1));
-        args[i] = "BOMB";
-      }
-      function.getTarget().invokeWithArguments(args);
+      function.getTarget().invoke(klass);
     };
   }
   
