@@ -11,18 +11,21 @@ SmartAss Reference Guide
    everything is an Object
  
    ```
+   null              // Void
    true              // Boolean
    false             // Boolean
    2                 // Integer
    3.14              // Double
    10000000000       // Long
    10000000000000000000000000000  // BigInteger
-   "foo"             // String
-   'foo              // a symbol (Klass or String)
+   "foo"             // String    
+   'foo              // a symbol (a Klass or a String depending on the context)
+   [1, 2, 3]         // List
+   { "a": "b" }      // Map
    ```
    
    
- * block of code and semicolon
+ * Block of code and semicolon
  
    A block of code is a suite of expressions.
    The value of a block of code is the value of the last expression.
@@ -65,11 +68,11 @@ SmartAss Reference Guide
    ```
    a = 2      // a is created
    b = a      // b is created then a is destroyed
-   print(b)   // b is destroyed
+   print(b)   // then b is destroyed
    ```
    
    If a local variable is read without being assigned,
-   SmartAss consider that the variable is a symbol,
+   SmartAss will try to consider the name as a symbol i.e.
    a reference to a Klass.
    By example, the code below
    ```
@@ -77,29 +80,101 @@ SmartAss Reference Guide
    ```
    will produce an error at the execution.
    
-   There is an exception to that rule when calling a method,
-   by example
+   If there is a Klass in the context with the same name,
+   the class will be used, by example
+   ```
+   alias('java.lang.Integer, 'Int)
+   print(Int)  // Int is not a valid local variable but it's a Klass name
+   ```
+   
+   In case of a call of a method, if the name is neither a local variable
+   nor a Klass name, it will be considered as a String.
+   By example, in
    ```
    result = sum(3, 4)
    ```
-   call the method 'sum' of this while the code
-   below calls the lambda stored in 'sum'
+   sum is a String.
    
+   If there is a local variable in the current scope,
+   it will be preferred to a symbol, thus the following
+   code will calculate 3 + 7
    ```
-   sum = (a, b: a + b)
+   sum = (a, b: a + b)   // defined an anonymous method with two parameters 'a' and 'b'
    result = sum(3, 7)
    ```
    
-   Because symbol can denote a Klass literal, it can be used to create
-   an instance of a Klass. In the following code, Book is a String in the
-   first line and a Klass in the 4th line because a call to 'class'
-   register the newly created Klass in the environment.
-   ```
-   class('Book, {'author, 'title}:
-   )
+   So the rule is, if there is a name, check first if it's a local variable,
+   then if it's a Klass and when it can be a method name, considere that
+   this is a String.
    
-   book = Book("Dan Brown", "Da Vinci Code")
+   
+ * Lambdas
+ 
+   In SmartAss, everything is an expression, there is no declaration,
+   so SmartAss use the mechanism of lambda to represent a delayed
+   computation. 
+   
+   By example, the following code represent an anonymous function
+   (usually called a lambda) that prints its first argument
    ```
+   p = (x: print(x))
+   p(hello)
+   ```
+   
+   A lambda can also reference value of variable defined in the outer environment,
+   so by example the local variable 'script' can be used inside the lambda body.  
+   ```
+   script = this
+   p = (x: script.print(x))
+   p("hello")
+   ```
+   The first line may be weird, a simple explanation is that 'this' represent
+   the current script, if you want the whole explanation,
+   see the section about object orientation below.
+   
+   A variable defined in the outer environment can *not* be changed inside the lambda,
+   because the runtime copy the value of the variable when the lambda is created.
+   By example
+   ```
+   x = 3
+   l = (: x = 4)
+   print(x)  // prints 3 
+   ```
+   
+   By default, you can not define a function in SmartAss, by the default environment
+   (core.sms) adds a way to define something close to a function
+   ```
+   require("samples/core.sms")   // load core.sms niceties
+   
+   def('bestValue:
+     42
+   )
+   print(bestValue())    // print 42
+   ```
+   
+   the call to def use a shortcut syntax for this call
+   ```
+   def('bestValue, (:
+     42
+   ))
+   ```
+   so the interpreter will call 'def with the String 'destValue and a lambda
+   that when called will return the value 42. 'def will associate the name
+   'bestValue to the Function object corresponding to the lambda (: 42).
+   
+   At that point, you may think that SmartAss is a functional language,
+   but it's not, SmartAss is a methodical language, all functions
+   are in fact methods, i.e. are defined on a class, in our case,
+   def which is a method of the class Script.
+   
+   so when writing the code above, the interpreter understands this code
+   ```
+   script.def('bestValue, (:
+     42
+   ))
+   script.print(script.bestValue())    // print 42
+   ```
+   
    
    
  * Object Oriented
@@ -109,7 +184,7 @@ SmartAss Reference Guide
    instance, obviously polymorphism works (also named virtual call
    or late binding) but there is no mechanism
    for doing inheritance or mixins by default
-   (mostly because you can implement them yourself). 
+   (mostly because you can implement something like that yourself). 
    
    A class is defined by using the method named 'class' defined
    inside the class Script. By example, the following code creates
@@ -144,7 +219,7 @@ SmartAss Reference Guide
      def('author: @author )
    )
    class('Book, {}:                // re-open the class Book
-     def('title: @title )
+     def('str: @author.concat(" ").concat(@title))
    )
    ```
    But unlike in Ruby you can not add new fields when
@@ -153,20 +228,34 @@ SmartAss Reference Guide
    instances a runtime which is a performance hog
    because it requires a full GC). 
    
-   A java class can be re-open too.
-   By example, you can add a method '+' to java.lang.String
+   A Java class can be re-open too,
+   by example, you can add a method '+' to java.lang.String
    ```
    class('java.lang.String, {}:
      def('+ | other:
        this.concat(other)
      )
    )
-   print("foo" + "bar")  // foobar
+   class('Book, {}:                // re-open the class Book
+     def('str: @author + " ") + @title))
+   )
    ```
    
-   Inside the block containing the call to 'def', it's possible
-   to execute any expression. By example to print the name
-   of 'this' ('this' being the newly created Klass).
+   In SmartAss, the class creation is in fact just a method call with a lambda.
+   By example, the definition of the class Book
+   ```
+   class(`Book, {'author, 'title}:
+   )
+   ```
+   can be re-written as a method call on the current script object
+   with the symbol Book. The code above is just a shortcut for this code
+   ```
+   this.class('Book, {'author, 'title}, (:
+   ))
+   ```
+   
+   Inside the lambda body, it's possible to execute any expression, not only call
+   'def. By example to print the name of 'this' ('this' being the newly created Klass).
    ```
    script = this
    class('Book, {'author, 'title}:
@@ -184,66 +273,38 @@ SmartAss Reference Guide
    is not executed when the class is defined but the first time
    a method of the class is executed.
    This trick allows to defined a lot of classes but
-   only pay for the ones used. 
-
-
- * Lambdas
- 
-   In SmartAss, everything is an expression, there is no declaration,
-   so SmartAss use the mechanism of lambda to represent a delayed
-   computation. 
+   only pay for the ones used.
    
-   By example, the following code represent an anonymous function
-   (usually called a lambda) that prints its first argument
+   SmartAss is methodical, not functional, so every call is a method call,
+   even a call a lambda. By example this code
    ```
-   p = (x: print(x))
-   p(hello)
-   ```
-   
-   In SmartAss, the class creation is in fact just a method call with a lambda.
-   By example, the definition of the class Book
-   ```
-   class(`Book, {'author, 'title}:
+   script = this
+   def('printIf | list, filter:
+     list.stream().forEach(element:
+       if(filter(element): print(element))
+     )
    )
+   printIf([0, 1, 2, 3, 4] | x: x % 3 == 0)
    ```
-   can be re-written as a method call on the current script object
-   with the symbol Book. The code above is just a shortcut for this code
-   ```
-   this.class('Book, {'author, 'title}, (:
-   ))
-   ```
-   
-   A lambda can also reference value of variable defined in the outer environment,
-   so by example the local variable 'script' can be used inside the lambda body.  
+   can be rewritten to
    ```
    script = this
-   p = (x: script.print(x))
-   p("hello")
+   def('printIf | list, filter:
+     list.stream().forEach(element:
+       if(element.filter(): print(element))
+     )
+   )
+   printIf([0, 1, 2, 3, 4]: this % 3 == 0)
    ```
+   Here, filter is called as a method call i.e. element.filter() and not
+   filter(element), so the element is sent as 'this' inside the lambda,
+   hence the code of the lambda is (:this % 3 == 0) and not
+   (x: x % 3 == 0)
    
-   A variable defined in the outer environment can *not* be changed inside the lambda,
-   because the runtime copy the value of the variable when the lambda is created.
-   By example
-   ```
-   x = 3
-   l = (: x = 4)
-   print(x)  // prints 3 
-   ```
-   
-   And by the way, there is no function in SmartAss, only methods,
-   so a lambda has always a hidden parameter 'this' and can always
-   be called using the method call syntax
-   ```
-   script = this
-   p = (: script.print(this))
-   "hello".p()
-   ```
- 
  
  * One expression to rule them all
    
-   In SmartAss, almost everything is a method call.
-   or a shortcut to a method call.
+   In SmartAss, almost everything is a method call or a shortcut to a method call.
    
    ```
    a + b
@@ -271,6 +332,7 @@ SmartAss Reference Guide
    this.'star(text)
    ```
 
+   
 
   * if, while, return and throw
  
