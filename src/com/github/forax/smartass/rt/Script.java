@@ -16,10 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractList;
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -43,13 +39,14 @@ import com.github.forax.smartass.ast.ASTBuilder;
 import com.github.forax.smartass.ast.Lambda;
 import com.github.forax.smartass.ast.Parameter;
 import com.github.forax.smartass.rt.Rewriter.ProtoFun;
+import com.github.forax.smartass.util.SmartList;
+import com.github.forax.smartass.util.SmartMap;
 
 public final class Script {
   private final ConstantDictionary dictionary = new ConstantDictionary();
   private final ScriptClassLoader classLoader = new ScriptClassLoader();
   final HashMap<String, Klass> klassCache = new HashMap<>();
   
-  private final Klass klassOfNull = Klass.create("null", null, Collections.emptyList(), new HashMap<>());
   final ThreadLocal<Klass> threadLocal = new ThreadLocal<>();
   private final ClassValue<Klass> klasses = new ClassValue<Klass>() {
     @Override
@@ -67,6 +64,7 @@ public final class Script {
       return klass;
     }
   };
+  private final Klass klassOfNull = klasses.get(Void.class);
   
   public Script() {
     // empty
@@ -477,17 +475,7 @@ public final class Script {
   
   @SuppressWarnings("unused")  // called from a method handle
   private static Object asList(Object[] array) {
-    class SmartList extends AbstractList<Object> implements RandomAccess {
-      @Override
-      public Object get(int index) {
-        return array[index];
-      }
-      @Override
-      public int size() {
-        return array.length;
-      }
-    }
-    return new SmartList();
+    return new SmartList(array);
   }
   
   @SuppressWarnings("unused")  // called from a method handle
@@ -496,36 +484,7 @@ public final class Script {
     for(int i = 0; i < array.length; i+=2) {
       map.put(array[i], array[i + 1]);
     }
-    return new AbstractMap<Object,Object>() {
-      @Override public int size()                                { return map.size(); }
-      @Override public boolean isEmpty()                         { return map.isEmpty(); }
-      @Override public Object get(Object key)                    { return map.get(key); }
-      @Override public Object getOrDefault(Object key, Object defaultValue) { return map.getOrDefault(key, defaultValue); } 
-      @Override public boolean containsKey(Object key)           { return map.containsKey(key); }
-      @Override public void forEach(BiConsumer<? super Object, ? super Object> action) { map.forEach(action); }
-      
-      private transient Set<Object> keySet;
-      @Override public Set<Object> keySet()                      { return (keySet !=null)? keySet: (keySet = Collections.unmodifiableSet(map.keySet())); }
-      private transient Collection<Object> values;
-      @Override public Collection<Object> values()               { return (values !=null)? values: (values = Collections.unmodifiableCollection(map.values())); }
-      private transient Set<Map.Entry<Object, Object>> entrySet;
-      @Override public Set<Map.Entry<Object, Object>> entrySet() { return (entrySet !=null)? entrySet: (entrySet = Collections.unmodifiableSet(map.entrySet())); }
-    
-      private String asJsonValue(Object o) {
-        if (o instanceof String) {
-          return '\"' + o.toString() + '"';
-        }
-        return String.valueOf(o);
-      }
-      
-      @Override
-      public String toString() {
-        return map.entrySet()
-                  .stream()
-                  .map(entry -> asJsonValue(entry.getKey()) + ": " + asJsonValue(entry.getValue()))
-                  .collect(Collectors.joining(",", "{", "}"));
-      }
-    };
+    return new SmartMap(map);
   }
   
   @MethodInfo(hidden=true)
