@@ -30,17 +30,17 @@ public final class Klass {
     return new Klass(name, staticKlass, fieldMap, methodMap);
   }
   
-  private interface Initializer {
+  interface Initializer {
     void accept(Klass klass) throws Throwable;
   }
   
-  void registerInitializer(Function function) {
-    Initializer initializer = this.initializer;
+  void registerInitializer(Initializer initializer) {
+    Initializer previousInitializer = this.initializer;
     this.initializer = klass -> {
-      if (initializer != null) {  // call previous initializer
-        initializer.accept(klass);
+      if (previousInitializer != null) {
+        previousInitializer.accept(klass);
       }
-      function.getTarget().invoke(klass);
+      initializer.accept(klass);
     };
   }
   
@@ -83,9 +83,10 @@ public final class Klass {
   // public API !
   // ---------------------------
  
-  public Function def(String name, Function body) {
+  public Function def(String name, Function body) throws Throwable {
     Objects.requireNonNull(name);
     Objects.requireNonNull(body);
+    initialize();
     if (methodMap.get(name) != null) {
       throw new LinkageError("a method " + name + " already exist in klass " + this.name);
     }

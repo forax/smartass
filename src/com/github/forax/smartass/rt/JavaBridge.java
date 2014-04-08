@@ -26,23 +26,24 @@ final class JavaBridge {
     
     HashMap<String, Function> classFunMap = new HashMap<>();
     HashMap<String, Function> staticFunMap = new HashMap<>();
-    populateKlassWithStaticFields(type, staticFunMap);
-    
-    HashMap<String, ArrayList<Method>> classMap = new HashMap<>();
-    HashMap<String, ArrayList<Method>> staticMap = new HashMap<>();
-    gatherMethods(type, classMap, staticMap);
-    populateKlassWithMethods(classFunMap, classMap); 
-    populateKlassWithMethods(staticFunMap, staticMap); 
-    
-    // add all methods defined in Klass to the static klass
-    if (type != Klass.class) { // avoid infinite recursion
-      staticFunMap.putAll(klasses.get(Klass.class).getMethodMap());
-    } else {
-      staticFunMap.putAll(classFunMap);
-    }
-    
     Klass staticKlass = Klass.create("static-" + klassName, null, Collections.emptyList(), staticFunMap);
+    staticKlass.registerInitializer(klazz -> {
+      HashMap<String, ArrayList<Method>> staticMap = new HashMap<>();
+      gatherMethods(type, true, staticMap);
+      populateKlassWithStaticFields(type, staticFunMap);
+      populateKlassWithMethods(staticFunMap, staticMap); 
+      
+      Klass klassKlass = klasses.get(Klass.class);
+      klassKlass.initialize();
+      staticFunMap.putAll(klassKlass.getMethodMap());
+    });
+    
     Klass klass = Klass.create(klassName, staticKlass, Collections.emptyList(), classFunMap);
+    klass.registerInitializer(klazz -> {
+      HashMap<String, ArrayList<Method>> classMap = new HashMap<>();
+      gatherMethods(type, false, classMap);
+      populateKlassWithMethods(classFunMap, classMap);
+    });
     return klass;
   }
 
@@ -358,9 +359,7 @@ final class JavaBridge {
         });
   }
 
-  private static void gatherMethods(Class<?> type,
-      HashMap<String, ArrayList<Method>> classMap,
-      HashMap<String, ArrayList<Method>> staticMap) {
+  private static void gatherMethods(Class<?> type, boolean gatherStatic, HashMap<String, ArrayList<Method>> map) {
     for(Method method: type.getMethods()) {
       if (method.getDeclaringClass() == Object.class) {
         continue;  // skip java.lang.Object's methods, objects have no identity
@@ -378,8 +377,9 @@ final class JavaBridge {
       }
       
       boolean isStatic = Modifier.isStatic(method.getModifiers());
-      
-      HashMap<String, ArrayList<Method>> map = (isStatic)? staticMap: classMap;
+      if (isStatic != gatherStatic) {
+        continue;  // skip static or instance method
+      }
       ArrayList<Method> list = map.get(name);
       if (list == null) {
         list = new ArrayList<>();

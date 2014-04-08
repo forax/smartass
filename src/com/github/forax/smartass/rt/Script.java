@@ -534,7 +534,7 @@ public final class Script {
     if (body.getNameHint() == null) {
       body.setNameHint(klass.getName().replace('.',  '_') + "_init");
     }
-    klass.registerInitializer(body);  // delay initialization
+    klass.registerInitializer(klazz -> body.getTarget().invoke(klazz));  // delay initialization
     return klass;
   }
   
