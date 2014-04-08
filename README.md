@@ -4,7 +4,7 @@ SmartAss
 The goal of SmartAss is to be easily understandable so you can teach it yourself.
 To achieve that goal SmartAss has a handful of concepts.
 
-  * SmartAss is methodical as opposed to functional, every block of code
+  * SmartAss is methodical as opposed to functional, every blocks of code
     is a method (with no name), most of the construction of the language are method calls.
  
   * Every syntax construction is an expression.
