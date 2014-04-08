@@ -1,0 +1,4 @@
+require("samples/core.sms")
+
+print("hello !")
+
