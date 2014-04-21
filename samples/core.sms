@@ -25,9 +25,18 @@ compare_mixin = (:
   def('>= | other: 'java.lang.Integer .signum(compareTo(other)) != -1)
 )
 
+class('java.lang.Void, {}:
+  def('truth: false)
+  def('== | other: 'java.util.Objects .isNull(other))
+  def('!= | other: 'java.util.Objects .nonNull(other))
+)
+
 class('java.lang.Boolean, {}:
   equals_mixin()
   
+  def('truth:
+     this
+  )
   def('!:
     if(this: false: true)
   )
@@ -40,6 +49,9 @@ class('java.lang.Integer, {}:
   equals_mixin()
   compare_mixin()
   
+  def('truth:
+    if(this.equals(0): false: true)
+  )
   def('-@:
     'java.lang.Math .negateExact(this)
   )

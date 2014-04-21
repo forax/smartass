@@ -106,6 +106,7 @@ class('Intersection, {'thing, Ray 'ray, double 'dist}:
 class('Surface, {Function 'diffuse, Function 'specular, Function 'reflect, double 'roughness}:
   def('diffuse: @diffuse)
   def('specular: @specular)
+  def('reflect: @reflect)
   def('roughness: @roughness)
 )
 class('Thing, {Function 'intersect, Function 'normal, Surface 'surface}:
@@ -124,6 +125,7 @@ class('Scene, {List 'things, List 'lights, _Camera 'camera}:
 )
 
 class('_Sphere, {Vector 'center, double 'radius2, Surface 'surface}:
+    def('surface: @surface)
     def('normal | pos:
       (pos - @center).norm()
     )
@@ -200,7 +202,7 @@ class('RayTracer, {}:
       i = 0
       while(i < things.size():
         inter = things.get(i).intersect(ray)
-        if(inter:
+        if(null != inter:
           if(inter.dist < closest:
             closestInter = inter
             closest = inter.dist
@@ -213,47 +215,47 @@ class('RayTracer, {}:
 
     testRay = (Ray ray, Scene scene:
       isect = intersections(ray, scene);
-      if(isect: isect.dist)
+      if(null != isect: isect.dist)
     )
     
-    traceRay = (Ray ray, Scene scene, int depth:
-      isect = intersections(ray, scene);
-      if(isect: shade(isect, scene, depth): BACKGROUND)
-    )
-
     getReflectionColor = (thing, Vector pos, Vector normal, Vector rd, Scene scene, int depth:
-      thing.surface.reflect(pos).scale(traceRay(Ray(pos, rd), scene, depth + 1))
+      traceRay(Ray(pos, rd), scene, depth + 1).scale(thing.surface.reflect()(pos))
     )
 
-    getNaturalColor = (thing, Vector pos, Vector norm, Vector rd, Scene scene:
+    getNaturalColor = (thing, Vector position, Vector normal, Vector rd, Scene scene:
         addLight = (Color col, Light light:
-            ldis = light.pos - pos
+            ldis = light.pos - position
             livec = ldis.norm()
-            neatIsect = testRay(Ray(pos, livec), scene)
-            isInShadow = if(neatIsect: neatIsect <= ldis.mag: false)
+            neatIsect = testRay(Ray(position, livec), scene)
+            isInShadow = if(null != neatIsect: neatIsect <= ldis.mag: false)
             if (isInShadow:
               return col
             :
-              illum = norm.dot(livec)
+              illum = normal.dot(livec)
               lcolor = if(illum > 0: light.color.scale(illum)
                                    : DEFAULT_COLOR)
               specular = rd.norm().dot(livec)
               scolor = if(specular > 0: light.color.scale(Math.pow(specular, thing.surface.roughness))
                                       : DEFAULT_COLOR)
-              col + lcolor * thing.surface.diffuse(pos) + scolor * thing.surface.specular(pos)
+              col + lcolor * thing.surface.diffuse(position) + scolor * thing.surface.specular(position)
             )
         )
-        scene.lights.stream.reduce(DEFAULT_COLOR, addLight)
+        scene.lights.stream.reduce(DEFAULT_COLOR, addLight, (u, v: throw "boom"))
     )
 
     shade = (Intersection isect, Scene scene, int depth:
         d = isect.ray.dir;
-        pos = isect.dist * d + isect.ray.start
+        pos = d * isect.dist + isect.ray.start
         normal = isect.thing.normal(pos)
-        reflectDir = d - normal * normal.dot(d) * 2;
+        reflectDir = d - normal * normal.dot(d) * 2.0
         naturalColor = BACKGROUND + getNaturalColor(isect.thing, pos, normal, reflectDir, scene)
         reflectedColor = if(depth >= MAX_DEPTH: GREY: getReflectionColor(isect.thing, pos, normal, reflectDir, scene, depth))
         naturalColor + reflectedColor
+    )
+
+    def('traceRay | Ray ray, Scene scene, int depth:
+      isect = intersections(ray, scene);
+      if(null != isect: shade(isect, scene, depth): BACKGROUND)
     )
 
     def('render |Scene scene, ctx, int screenWidth, int screenHeight:

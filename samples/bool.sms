@@ -1,4 +1,7 @@
 class('java.lang.Boolean, {}:
+  def('truth:
+    this
+  )
   def('!:
     if(this: false: true)
   )

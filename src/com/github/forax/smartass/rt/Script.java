@@ -393,7 +393,9 @@ public final class Script {
   public static CallSite bsm_method_call(Lookup lookup, @SuppressWarnings("unused") String name, MethodType type) {
     ScriptClassLoader classLoader = (ScriptClassLoader)lookup.lookupClass().getClassLoader();
     Script script = classLoader.getScript();
-    return new ConstantCallSite(METHOD_CALL.bindTo(script).asCollector(Object[].class, type.parameterCount() - 1));
+    return new ConstantCallSite(METHOD_CALL.bindTo(script)
+                                           .asCollector(Object[].class, type.parameterCount() - 1)
+                                           .asType(type));
   }
   
   @SuppressWarnings("unused")  // called from a method handle
@@ -424,33 +426,6 @@ public final class Script {
       throw new LinkageError("wrong number of arguments(" + args.length + ") to call " + selector + ' ' + mh.type());
     }
     return mh.invokeWithArguments(args);
-  }
-  
-  private static final MethodHandle TRUTH = findStatic(Script.class, "truth", boolean.class, Object.class);
-  
-  @MethodInfo(hidden=true)
-  public static CallSite bsm_truth(@SuppressWarnings("unused") Lookup lookup, @SuppressWarnings("unused") String name, @SuppressWarnings("unused") MethodType type) {
-    return new ConstantCallSite(TRUTH);
-  }
-  
-  @SuppressWarnings("unused")  // called from a method handle
-  private static boolean truth(Object value) {
-    if (value == null) {
-      return false;
-    }
-    if (value instanceof Boolean) {
-      return ((Boolean)value);
-    }
-    if (value instanceof Integer) {
-      return ((Integer)value) != 0;
-    }
-    if (value instanceof Long) {
-      return ((Long)value) != 0L;
-    }
-    if (value instanceof BigInteger) {
-      return ((BigInteger)value).equals(BigInteger.ZERO);
-    }
-    return false;
   }
   
   private static final MethodHandle AS_THROWABLE = findStatic(Script.class, "asThrowable", Throwable.class, Object.class);
@@ -560,11 +535,10 @@ public final class Script {
     return klass;
   }
   
-  @SuppressWarnings("static-method")
   public Function fieldAccessor(String name) {
     Objects.requireNonNull(name);
     return Function.createFromMH(Collections.emptyList(),
-        fun -> Script.bsm_field_get(null /*unused*/, name, null /*unused*/).dynamicInvoker()
+        fun -> FIELD_GET.bindTo(this).bindTo(name)
         );
   }
   

@@ -98,6 +98,9 @@ public class Rewriter {
     public void emitLabel(Label label) {
       mv.visitLabel(label);
     }
+    public void emitLdc(Object constant) {
+      mv.visitLdcInsn(constant);
+    }
     public void emitIndy(String bsmName, String name, String desc) {
       mv.visitInvokeDynamicInsn(name, desc,
           new Handle(H_INVOKESTATIC, INTERNAL_NAME, bsmName, BSM_SIG));
@@ -218,14 +221,16 @@ public class Rewriter {
             env.emitInsn(POP);
             visit(loop.getBlock(), env.newEnv());
             env.emitLabel(check);
+            env.emitLdc("truth");
             visit(loop.getCondition(), env);
-            env.emitIndy("bsm_truth", "truth", "(Ljava/lang/Object;)Z");
+            env.emitIndy("bsm_method_call", "truth", "(Ljava/lang/Object;Ljava/lang/Object;)Z");
             env.emitJump(IFNE, start);
           })
           .when(If.class, (_if, env) -> {
             Label notTrue = new Label();
+            env.emitLdc("truth");
             visit(_if.getCondition(), env);
-            env.emitIndy("bsm_truth", "truth", "(Ljava/lang/Object;)Z");
+            env.emitIndy("bsm_method_call", "truth", "(Ljava/lang/Object;Ljava/lang/Object;)Z");
             env.emitJump(IFEQ, notTrue);
             visit(_if.getTrueBlock(), env.newEnv());
             Label end = new Label();

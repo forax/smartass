@@ -7,6 +7,8 @@ assert(: true == true)
 assert(: false != true)
 assert(: true.str() == "true")
 assert(: false.str() == "false")
+assert(: if(true: true: false))
+assert(: if(false: false: true))
 
 // integers
 assert(: 1 == 1)
@@ -17,14 +19,14 @@ assert(: 3 <= 3)
 assert(: 5 > 4)
 assert(: 5 >= 4)
 assert(: 5 >= 5)
-
 assert(: -1 == 0 - 1)
 assert(: 1 + 2 == 3)
 assert(: 1 - 3 == -2)
 assert(: 2 * 4 == 8)
-
 assert(: 2.str() == "2")
 assert(: (-747).str() == "-747")
+assert(: if(1: true: false))
+assert(: if(0: false: true))
 
 // strings
 assert(: "foo" == "foo")
