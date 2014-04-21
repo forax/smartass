@@ -173,6 +173,9 @@ public final class Script {
     if (nameHint == null || !validJavaIdentifier(nameHint)) {
       nameHint = "lambda";
     }
+    
+    //System.out.println("rewrite " + nameHint);
+    
     byte[] bytecodes = Rewriter.rewrite(function, nameHint, className, dictionary);
     CheckClassAdapter.verify(new ClassReader(bytecodes), false, new PrintWriter(System.out));
     Class<?> clazz = classLoader.defineClasse(className, bytecodes);
@@ -220,7 +223,7 @@ public final class Script {
     
     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS|ClassWriter.COMPUTE_FRAMES);
     writer.visit(V1_8, ACC_PUBLIC|ACC_SUPER, internalName, null, "java/lang/Object", null);
-    Set<String> fields = klass.getFields();
+    Set<String> fields = klass.getFieldMap().keySet();
     MethodType methodType = MethodType.genericMethodType(1 + fields.size()).changeReturnType(void.class);
     MethodVisitor init = writer.visitMethod(ACC_PUBLIC, "<init>", methodType.toMethodDescriptorString(), null, null);
     init.visitCode();
@@ -359,18 +362,28 @@ public final class Script {
   }
   
   private static final MethodHandle FIELD_GET =
-      findStatic(Script.class, "field_get", Object.class, String.class, Object.class);
+      findStatic(Script.class, "field_get", Object.class, Script.class, String.class, Object.class);
   
   @MethodInfo(hidden=true)
-  public static CallSite bsm_field_get(@SuppressWarnings("unused") Lookup lookup, String name, @SuppressWarnings("unused") MethodType type) {
-    return new ConstantCallSite(FIELD_GET.bindTo(name));
+  public static CallSite bsm_field_get(Lookup lookup, String name, @SuppressWarnings("unused") MethodType type) {
+    ScriptClassLoader classLoader = (ScriptClassLoader)lookup.lookupClass().getClassLoader();
+    Script script = classLoader.getScript();
+    return new ConstantCallSite(FIELD_GET.bindTo(script).bindTo(name));
   }
   
   @SuppressWarnings("unused")  // called from a method handle
-  private static Object field_get(String name, Object receiver) throws Throwable {
+  private static Object field_get(Script script, String name, Object receiver) throws Throwable {
     //System.out.println("bsm_get " + receiver.getClass() +" " + name);
-    MethodHandle target = MethodHandles.publicLookup().findGetter(receiver.getClass(), name, Object.class);
-    return target.asType(MethodType.methodType(Object.class, Object.class)).invokeExact(receiver);
+    Klass klass = script.getKlass(receiver);
+    MethodHandle target = klass.getFieldMap().computeIfAbsent(name, fieldName -> {
+      try {
+        MethodHandle mh = MethodHandles.publicLookup().findGetter(klass.getJavaClass(), fieldName, Object.class);
+        return mh.asType(MethodType.methodType(Object.class, Object.class));
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+        throw (LinkageError)new LinkageError().initCause(e);
+      }
+    });
+    return target.invokeExact(receiver);
   }
   
   private static final MethodHandle METHOD_CALL =
@@ -535,6 +548,7 @@ public final class Script {
       body.setNameHint(klass.getName().replace('.',  '_') + "_init");
     }
     klass.registerInitializer(klazz -> body.getTarget().invoke(klazz));  // delay initialization
+    //body.getTarget().invoke(klass);  // direct call
     return klass;
   }
   

@@ -71,8 +71,8 @@ public final class Klass {
     return javaClass;
   }
   
-  Set<String> getFields() {
-    return fieldMap.keySet();
+  Map<String, MethodHandle> getFieldMap() {
+    return fieldMap;
   }
   Map<String, Function> getMethodMap() {
     return methodMap;
