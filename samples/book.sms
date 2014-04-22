@@ -1,8 +1,11 @@
+require("samples/core.sms")
+
 class('Book, {'author, 'title}:
   def('str:
-    @title.concat(": ").concat(@author)
+    @title + ": " + @author
   )
 )
 
 book = Book("Dan Brown", "Da Vinci Code")
-book.str()
+print(book.str)
+

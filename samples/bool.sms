@@ -1,4 +1,4 @@
-class('java.lang.Boolean:
+class('java.lang.Boolean, {}:
   def('truth:
     this
   )

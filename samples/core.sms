@@ -1,4 +1,7 @@
-class('com.github.forax.smartass.rt.Script:
+class('com.github.forax.smartass.rt.Script, {}:
+  def('class | symbol, function:
+    class(symbol, 'java.util.Collections .emptyMap, function)
+  )
   def('assert | block:
     if(block() == false:
       throw "bad assertion"

@@ -1,5 +1,5 @@
 script = this
-class('com.github.forax.smartass.rt.Klass:
+class('com.github.forax.smartass.rt.Klass, {}:
   def('accessor | name:
     def(name, script.fieldAccessor(name))
   )
