@@ -403,6 +403,9 @@ public final class Script {
     MethodHandle mh;
     if (selector instanceof Function) {
       mh = ((Function)selector).getTarget();
+      if (args.length != mh.type().parameterCount()) {
+        throw new LinkageError("wrong number of arguments(" + (args.length - 1)+ ") to call " + selector + ' ' + mh.type());
+      }
     } else {
       Klass klass;
       if (selector instanceof Klass) {
@@ -416,14 +419,16 @@ public final class Script {
         }
       }
       klass.initialize();  // need to run klass initializers if they exist
-      Function method = klass.getMethodMap().get(selector);
-      if (method == null) {
+      Function[] functions = klass.getMethodMap().get(selector);
+      if (functions == null) {
         throw new LinkageError("no method '" + selector + "' defined on " + klass.getName());
       }
+      Function method;
+      int parameterCount = args.length - 1;
+      if (parameterCount >= functions.length || ((method = functions[parameterCount]) == null)) {
+        throw new LinkageError("wrong number of arguments(" + parameterCount + ") to call " + selector);
+      }
       mh = method.getTarget();
-    }
-    if (args.length != mh.type().parameterCount()) {
-      throw new LinkageError("wrong number of arguments(" + args.length + ") to call " + selector + ' ' + mh.type());
     }
     return mh.invokeWithArguments(args);
   }

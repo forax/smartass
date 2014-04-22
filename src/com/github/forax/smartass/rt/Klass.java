@@ -1,6 +1,7 @@
 package com.github.forax.smartass.rt;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,18 +11,18 @@ public final class Klass {
   private final String name;
   private final Klass staticKlass;
   private final LinkedHashMap<String, MethodHandle> fieldMap;
-  private final Map<String, Function> methodMap;
+  private final Map<String, Function[]> methodMap;
   private Class<?> javaClass;
   private Initializer initializer;
   
-  private Klass(String name, Klass staticKlass, LinkedHashMap<String, MethodHandle> fieldMap, Map<String, Function> methodMap) {
+  private Klass(String name, Klass staticKlass, LinkedHashMap<String, MethodHandle> fieldMap, Map<String, Function[]> methodMap) {
     this.name = Objects.requireNonNull(name);
     this.staticKlass = staticKlass;  
     this.fieldMap = fieldMap;
     this.methodMap = methodMap;
   }
   
-  static Klass create(String name, Klass staticKlass, List<String> fields, Map<String, Function> methodMap) {
+  static Klass create(String name, Klass staticKlass, List<String> fields, Map<String, Function[]> methodMap) {
     LinkedHashMap<String, MethodHandle> fieldMap = new LinkedHashMap<>();
     for(String field: fields) {
       fieldMap.put(field, null);
@@ -61,7 +62,7 @@ public final class Klass {
   Class<?> getJavaClass() {
     if (javaClass == null) { 
       // The class is not yet created, force it's creation(FIXME)
-      getMethod("@init").getTarget();
+      getInitMethod().getTarget();
       
       if (javaClass == null) {
         throw new AssertionError();
@@ -73,7 +74,7 @@ public final class Klass {
   Map<String, MethodHandle> getFieldMap() {
     return fieldMap;
   }
-  Map<String, Function> getMethodMap() {
+  Map<String, Function[]> getMethodMap() {
     return methodMap;
   }
   
@@ -86,19 +87,34 @@ public final class Klass {
     Objects.requireNonNull(name);
     Objects.requireNonNull(body);
     initialize();
-    if (methodMap.get(name) != null) {
-      throw new LinkageError("a method " + name + " already exist in klass " + this.name);
+    
+    int parameterCount = body.getParameters().size();
+    Function[] functions = methodMap.get(name);
+    if (functions == null) {
+      functions = new Function[1 + parameterCount];
+      methodMap.put(name, functions);
+    } else if (functions.length <= parameterCount) {
+      functions = Arrays.copyOf(functions, 1 + parameterCount);
+      methodMap.put(name, functions);
     }
-    methodMap.put(name, body);
+    
+    if (functions[parameterCount] != null) {
+      throw new LinkageError("a method " + name + " with " + parameterCount + " parameter(s) already exists in klass " + this.name);
+    }
+    functions[parameterCount] = body;
     if (body.getNameHint() == null) {
       body.setNameHint(name);
     }
     return body;
   }
   
-  public Function getMethod(String name) {
-    Objects.requireNonNull(name);
-    return methodMap.get(name);
+  Function getInitMethod() {
+    for(Function function: methodMap.get("@init")) {
+      if (function != null) {
+        return function;
+      }
+    }
+    throw new AssertionError("no method @init !");
   }
   
   public String getName() {
