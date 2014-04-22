@@ -20,7 +20,6 @@ public class Main {
     }
 
     Script script = new Script();
-    Object result = script.eval(lambda);
-    System.out.println(result);
+    script.eval(lambda);
   }
 }
