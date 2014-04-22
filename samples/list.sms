@@ -2,7 +2,7 @@ require("samples/core.sms")
 
 class('Cons, {'element, 'next}:
   def('size:
-    1 + @next.size()
+    1 + @next.size
   )
   def('filter| predicate:
     n = @next.filter(predicate)
@@ -12,11 +12,11 @@ class('Cons, {'element, 'next}:
     )
   )
   def('str:
-    @element.str() + " " + @next.str()
+    @element.str + " " + @next.str
   )
 )
 
-class('Nil, {}:
+class('Nil:
   def('size: 0)
   def('filter | predicate: this)
   def('str: "")
@@ -26,5 +26,5 @@ nil = Nil()
 cons = Cons
 
 list = cons(1, cons(2, cons(3, nil)))
-print("size: " + list.size().str())
-list.filter((element: element != 2)).str()
+print("size: " + list.size.str)
+list.filter((element: element != 2)).str

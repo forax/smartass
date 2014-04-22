@@ -491,6 +491,11 @@ public final class Script {
   // ---------------------------
   
   @MethodInfo(name="class")
+  public Klass defClass(Object symbol, Function body) throws Throwable {
+    return defClass(symbol, Collections.emptyMap(), body);
+  }
+  
+  @MethodInfo(name="class")
   public Klass defClass(Object symbol, Map<String,Object> parameterMap, Function body) throws Throwable {
     Objects.requireNonNull(symbol);
     Objects.requireNonNull(parameterMap);

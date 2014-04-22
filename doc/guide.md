@@ -218,7 +218,7 @@ SmartAss Reference Guide
    class('Book, {'author, 'title}:
      def('author: @author )
    )
-   class('Book, {}:                // re-open the class Book
+   class('Book:                // re-open the class Book
      def('str: @author.concat(" ").concat(@title))
    )
    ```
@@ -231,13 +231,13 @@ SmartAss Reference Guide
    A Java class can be re-open too,
    by example, you can add a method '+' to java.lang.String
    ```
-   class('java.lang.String, {}:
+   class('java.lang.String:    // re-open the class String
      def('+ | other:
        this.concat(other)
      )
    )
-   class('Book, {}:                // re-open the class Book
-     def('str: @author + " ") + @title))
+   class('Book:                // re-open the class Book
+     def('str2: @author + " " + @title)
    )
    ```
    

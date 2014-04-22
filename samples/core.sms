@@ -1,4 +1,4 @@
-class('com.github.forax.smartass.rt.Script, {}:
+class('com.github.forax.smartass.rt.Script:
   def('assert | block:
     if(block() == false:
       throw "bad assertion"
@@ -25,13 +25,13 @@ compare_mixin = (:
   def('>= | other: 'java.lang.Integer .signum(compareTo(other)) != -1)
 )
 
-class('java.lang.Void, {}:
+class('java.lang.Void:
   def('truth: false)
   def('== | other: 'java.util.Objects .isNull(other))
   def('!= | other: 'java.util.Objects .nonNull(other))
 )
 
-class('java.lang.Boolean, {}:
+class('java.lang.Boolean:
   equals_mixin()
   
   def('truth:
@@ -45,7 +45,7 @@ class('java.lang.Boolean, {}:
   )
 )
 
-class('java.lang.Integer, {}:
+class('java.lang.Integer:
   equals_mixin()
   compare_mixin()
   
@@ -69,7 +69,7 @@ class('java.lang.Integer, {}:
   )
 )
 
-class('java.lang.Double, {}:
+class('java.lang.Double:
   equals_mixin()
   compare_mixin()
   
@@ -96,7 +96,7 @@ class('java.lang.Double, {}:
   )
 )
 
-class('java.lang.String, {}:
+class('java.lang.String:
   equals_mixin()
   compare_mixin()
 

@@ -1,4 +1,4 @@
-class('com.github.forax.smartass.rt.Script, {}:
+class('com.github.forax.smartass.rt.Script:
   def('println | value:
     'java.lang.System .out().println(value)
   )

@@ -161,7 +161,7 @@ class('Plane, {Vector 'norm, double 'offset, Surface 'surface}:
    )
 )
 
-class('_Surfaces, {}:
+class('_Surfaces:
     shiny = Surface(
       (Vector pos: WHITE),        // diffuse
       (Vector pos: GREY),         // specular
@@ -192,7 +192,7 @@ class('_Surfaces, {}:
 )
 Surfaces = _Surfaces()
 
-class('RayTracer, {}:
+class('RayTracer:
     MAX_DEPTH = 5;
 
     intersections = (Ray ray, Scene scene:

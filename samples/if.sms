@@ -1,10 +1,10 @@
-class('java.lang.Boolean, {}:
+class('java.lang.Boolean:
   def('truth:
     this
   )
 )
 
-class('java.lang.Integer, {}:
+class('java.lang.Integer:
   def('truth:
     if(this.equals(0): false: true)
   )
