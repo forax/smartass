@@ -7,11 +7,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.github.forax.smartass.ast.Data.DataKind;
+import com.github.forax.smartass.grammar.parser.NonTerminalEnum;
 import com.github.forax.smartass.grammar.tools.Analyzers;
 import com.github.forax.smartass.grammar.tools.GrammarEvaluator;
 import com.github.forax.smartass.grammar.tools.TerminalEvaluator;
@@ -24,9 +27,17 @@ public class ASTBuilder implements GrammarEvaluator {
     Objects.requireNonNull(reader);
     LocationTracker tracker = new LocationTracker();
     ReaderWrapper buffer = new ReaderWrapper(reader, tracker);
-    ASTBuilder astBuilder = new ASTBuilder(path);
+    ASTBuilder astBuilder = new ASTBuilder(null, null, path);
     Analyzers.run(buffer, new TerminalBuilder(tracker), astBuilder, null, null);
     return astBuilder.lambda;
+  }
+  
+  public static void repl(Reader reader, Map<String, Object> environment, Consumer<Lambda> consumer, Path path) {
+    Objects.requireNonNull(reader);
+    LocationTracker tracker = new LocationTracker();
+    ReaderWrapper buffer = new ReaderWrapper(reader, tracker);
+    ASTBuilder astBuilder = new ASTBuilder(environment, consumer, path);
+    Analyzers.run(buffer, new TerminalBuilder(tracker), astBuilder, NonTerminalEnum.repl, null);
   }
   
   static class TerminalBuilder implements TerminalEvaluator<CharSequence> {
@@ -87,10 +98,14 @@ public class ASTBuilder implements GrammarEvaluator {
     }
   }
   
+  private final Map<String, Object> environment;
+  private final Consumer<Lambda> listener;
   private final Path path;
   private Lambda lambda;
   
-  private ASTBuilder(Path path) {
+  private ASTBuilder(Map<String, Object> environment, Consumer<Lambda> listener, Path path) {
+    this.environment = environment;
+    this.listener = listener;
     this.path = path;
   }
   
@@ -108,6 +123,44 @@ public class ASTBuilder implements GrammarEvaluator {
   @Override
   public void script(List<Expr> expr_star_opt) {
     lambda = new Lambda(Collections.emptyList(), new Block(block(expr_star_opt), 1), path, 1);
+  }
+  
+  @Override
+  public void acceptRepl() {
+    lambda = null;
+  }
+  @Override
+  public void repl_expr(Expr expr) {
+    repl_rec_expr(expr);
+  }
+  @Override
+  public void repl_rec_expr(Expr expr) {
+    ArrayList<Expr> exprs = new ArrayList<>();
+    for(String key: environment.keySet()) {
+      exprs.add(
+          new VarAssignment(key,
+              new MethodCall(new VarAccess("env", 0),
+                             new VarAccess("get", 0).allowString(),
+                             Arrays.asList(new Literal('"' + key + '"', 0)), null, 0), 0));
+    }
+    VarAssignment result;
+    if (expr instanceof VarAssignment) {
+      result = (VarAssignment)expr;
+      exprs.add(result);
+      exprs.add(
+          new MethodCall(new VarAccess("env", 0),
+                             new VarAccess("put", 0).allowString(),
+                             Arrays.asList(
+                                 new Literal('"' + result.getId() + '"', 0),
+                                 new VarAccess(result.getId(), 0)
+                             ), null, 0));
+    } else {
+      result = new VarAssignment("$result", expr, 0);
+      exprs.add(result);
+    }
+    exprs.add(new VarAccess(result.getId(), 0));
+    Lambda lambda = new Lambda(Arrays.asList(new Parameter("env", null, 0)), new Block(block(exprs), 1), path, 1);
+    listener.accept(lambda);
   }
   
   @Override

@@ -1,0 +1,26 @@
+require("samples/core.sms")
+
+script = this
+printStackTrace = (cause:
+  script.print("error " + cause.getMessage)
+  stacktrace = cause.getStackTrace
+  'java.util.Arrays .stream(stacktrace).filter(|element:
+    element.getClassName.startsWith("fun")
+  ).forEach(|element:
+    line = element.toString
+    script.print("  at " + line.substring(1 + line.indexOf(".".charAt(0))))
+  )
+)
+
+env = 'java.util.HashMap()
+consumer = (lambda:
+  'com.github.forax.smartass.rt.Builtins .tryEval(
+    (:
+      result = script.eval(lambda, "repl_eval", env)
+      script.print(result)
+    ), printStackTrace)
+)
+reader = 'java.io.InputStreamReader('java.lang.System .in)
+'com.github.forax.smartass.ast.ASTBuilder .repl(reader, env, consumer, null)
+reader.close
+

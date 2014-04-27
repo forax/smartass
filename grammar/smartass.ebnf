@@ -88,6 +88,7 @@ types:
 
 starts:
   script
+  repl
 
 productions:
  script = instrs?  { script }
@@ -107,6 +108,10 @@ productions:
        | 'return' expr                              { instr_return }
        | 'throw' expr                               { instr_throw }
        ;
+  
+ repl = repl eoi expr            { repl_rec_expr }
+      | expr                     { repl_expr }
+      ; 
   
  block = instrs?      { block }
        ;

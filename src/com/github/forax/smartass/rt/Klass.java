@@ -78,6 +78,15 @@ public final class Klass {
     return methodMap;
   }
   
+  Function getInitMethod() {
+    for(Function function: methodMap.get("@init")) {
+      if (function != null) {
+        return function;
+      }
+    }
+    throw new AssertionError("no method @init !");
+  }
+  
   
   //---------------------------
   // public API !
@@ -108,13 +117,9 @@ public final class Klass {
     return body;
   }
   
-  Function getInitMethod() {
-    for(Function function: methodMap.get("@init")) {
-      if (function != null) {
-        return function;
-      }
-    }
-    throw new AssertionError("no method @init !");
+  @Override
+  public String toString() {
+    return "klass " + name;
   }
   
   public String getName() {

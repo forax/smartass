@@ -50,6 +50,16 @@ public interface GrammarEvaluator {
    *  <code>instr ::= _throw expr</code>
    */
   public Expr instr_throw(Expr expr);
+  /** This methods is called after the reduction of the non terminal repl
+   *  by the grammar production repl_rec_expr.
+   *  <code>repl ::= repl eoi expr</code>
+   */
+  public void repl_rec_expr(Expr expr);
+  /** This methods is called after the reduction of the non terminal repl
+   *  by the grammar production repl_expr.
+   *  <code>repl ::= expr</code>
+   */
+  public void repl_expr(Expr expr);
   /** This methods is called after the reduction of the non terminal block
    *  by the grammar production block.
    *  <code>block ::= instrs_optional_2</code>
@@ -266,5 +276,6 @@ public interface GrammarEvaluator {
    */
   public Expr expr_binary_ge(Expr expr,Expr expr2);
 
+  public void acceptRepl();
   public void acceptScript();
 }

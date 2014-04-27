@@ -184,7 +184,7 @@ public class Analyzers {
 
     //TODO choose a start non terminal and a version here
     VersionEnum version = VersionEnum.DEFAULT;
-    NonTerminalEnum start = NonTerminalEnum.script;
+    NonTerminalEnum start = NonTerminalEnum.repl;
 
     Analyzers.run(reader, terminalEvaluator, grammarEvaluator, start, version);
   }*/

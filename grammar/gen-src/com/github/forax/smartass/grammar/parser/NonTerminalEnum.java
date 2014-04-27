@@ -8,6 +8,7 @@ public enum NonTerminalEnum {
 eoi,
 instrs,
 instr,
+repl,
 block,
 block_param,
 parameter,

@@ -303,6 +303,18 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
+                    case repl_rec_expr: { // not synthetic
+                                 Expr expr=(Expr)stack.pop_Object();
+                                           grammarEvaluator.repl_rec_expr(expr);
+                      
+          }
+          return;
+                    case repl_expr: { // not synthetic
+                                 Expr expr=(Expr)stack.pop_Object();
+                                           grammarEvaluator.repl_expr(expr);
+                      
+          }
+          return;
                     case instrs_optional_2_empty: { // OPTIONAL_EMPTY
                               stack.push_Object(null);
                     
@@ -782,7 +794,10 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
     }
 
      public void accept(NonTerminalEnum nonterminal) {
-       switch(nonterminal) {            case script:
+       switch(nonterminal) {            case repl:
+             grammarEvaluator.acceptRepl();
+             return;
+                      case script:
              grammarEvaluator.acceptScript();
              return;
                      default:
@@ -918,6 +933,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
               return;
                          case instr:
               stack.pop_Object();
+              return;
+                         case repl:
+              
               return;
                          case block:
               stack.pop_Object();

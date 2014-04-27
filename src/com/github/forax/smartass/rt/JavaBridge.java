@@ -4,6 +4,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -18,6 +20,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 final class JavaBridge {
   static Klass javaClasstoKlass(Class<?> type, ClassValue<Klass> klasses) {
@@ -28,8 +31,8 @@ final class JavaBridge {
     HashMap<String, Function[]> staticFunMap = new HashMap<>();
     Klass staticKlass = Klass.create("static-" + klassName, null, Collections.emptyList(), staticFunMap);
     staticKlass.registerInitializer(klazz -> {
-      HashMap<String, ArrayList<Method>[]> staticMap = new HashMap<>();
-      gatherMethods(type, true, staticMap);
+      HashMap<String, ArrayList<Executable>[]> staticMap = new HashMap<>();
+      gatherMethods(Arrays.<Executable>stream(type.getMethods()).filter(JavaBridge::isStatic), staticMap);
       populateKlassWithStaticFields(type, staticFunMap);
       populateKlassWithMethods(staticFunMap, staticMap); 
       
@@ -40,11 +43,19 @@ final class JavaBridge {
     
     Klass klass = Klass.create(klassName, staticKlass, Collections.emptyList(), classFunMap);
     klass.registerInitializer(klazz -> {
-      HashMap<String, ArrayList<Method>[]> classMap = new HashMap<>();
-      gatherMethods(type, false, classMap);
+      HashMap<String, ArrayList<Executable>[]> classMap = new HashMap<>();
+      gatherMethods(Arrays.<Executable>stream(type.getConstructors()), classMap);
+      gatherMethods(Arrays.<Executable>stream(type.getMethods()).filter(JavaBridge::isNotStatic), classMap);
       populateKlassWithMethods(classFunMap, classMap);
     });
     return klass;
+  }
+  
+  private static boolean isStatic(Executable executable) {
+    return Modifier.isStatic(executable.getModifiers());
+  }
+  private static boolean isNotStatic(Executable executable) {
+    return !Modifier.isStatic(executable.getModifiers());
   }
 
   private static void populateKlassWithStaticFields(Class<?> type,
@@ -72,29 +83,29 @@ final class JavaBridge {
     }
   }
   
-  private static void populateKlassWithMethods(HashMap<String, Function[]> funMap, HashMap<String, ArrayList<Method>[]> classMap) {
+  private static void populateKlassWithMethods(HashMap<String, Function[]> funMap, HashMap<String, ArrayList<Executable>[]> classMap) {
     classMap.forEach((name, methodByArity) -> {
       int maxArity = methodByArity.length;
       Function[] functions = new Function[maxArity];
       for(int i = 0; i < maxArity; i++) {
-        ArrayList<Method> methods = methodByArity[i];
-        if (methods == null) {
+        ArrayList<Executable> executables = methodByArity[i];
+        if (executables == null) {
           continue;
         }
-        Method method = methods.get(0);
-        List<String> params = Arrays.stream(method.getParameters()).map(Parameter::getName).collect(Collectors.toList());
+        Executable executable = executables.get(0);
+        List<String> params = Arrays.stream(executable.getParameters()).map(Parameter::getName).collect(Collectors.toList());
         Function function = Function.createFromMH(params,
             fun -> {
-              if (methods.size() == 1) {
-                return createMH(methods.get(0));
+              if (executables.size() == 1) {
+                return createMH(executables.get(0));
               }
-              Class<?>[][] parameters = methods.stream()
-                  .map((java.util.function.Function<Method,Class<?>[]>)Method::getParameterTypes)
+              Class<?>[][] parameters = executables.stream()
+                  .map((java.util.function.Function<Executable,Class<?>[]>)Executable::getParameterTypes)
                   .toArray(Class<?>[][]::new);
               
               //System.out.println("create decision tree " + methods);
               
-              MethodHandle[] mhs = methods.stream().map(JavaBridge::createMH).toArray(MethodHandle[]::new);
+              MethodHandle[] mhs = executables.stream().map(JavaBridge::createMH).toArray(MethodHandle[]::new);
               int[] indexes = IntStream.range(0, mhs.length).toArray();
               
               return createDecisionTree(parameters[0].length, parameters, 0, mhs, indexes, 0, indexes.length - 1);
@@ -252,31 +263,40 @@ final class JavaBridge {
     return Short.class;  // short
   }
 
-  private static MethodHandle createMH(Method method) {
-    int modifiers = method.getModifiers();
+  private static MethodHandle createMH(Executable executable) {
+    int modifiers = executable.getModifiers();
     boolean isStatic = Modifier.isStatic(modifiers);
-    Class<?> declaringClass = method.getDeclaringClass();
+    Class<?> declaringClass = executable.getDeclaringClass();
     MethodHandle mh;
     try {
-      if (isStatic || Modifier.isPublic(declaringClass.getModifiers())) {
-        mh = MethodHandles.publicLookup().unreflect(method);
-        if (isStatic) {
-          // a static method should skip the first parameter
-          mh = MethodHandles.dropArguments(mh, 0, Object.class);
+      if (executable instanceof Method) {
+        Method method = (Method)executable;
+        if (isStatic || Modifier.isPublic(declaringClass.getModifiers())) {
+          mh = MethodHandles.publicLookup().unreflect(method);
+          if (isStatic) {
+            // a static method should skip the first parameter
+            mh = MethodHandles.dropArguments(mh, 0, Object.class);
+          }
+        } else {
+          mh = findVirtualMHInHierarchy(declaringClass, method.getName(),
+              MethodType.methodType(method.getReturnType(), method.getParameterTypes()));
+
         }
       } else {
-        mh = findVirtualMHInHierarchy(declaringClass, method.getName(),
-               MethodType.methodType(method.getReturnType(), method.getParameterTypes()));
-      
+        Constructor<?> constructor = (Constructor<?>)executable;
+        mh = MethodHandles.publicLookup().unreflectConstructor(constructor);
+        // a constructor method should skip the first parameter
+        mh = MethodHandles.dropArguments(mh, 0, Object.class);  
       }
     } catch (IllegalAccessException e) {
-      return willThrowAnException(method, e);
+      return willThrowAnException(executable, e);
     }
     return conversionFilter(mh);
   }
   
-  private static MethodHandle willThrowAnException(Method method, Exception e) {
-    MethodHandle mh = MethodHandles.throwException(method.getReturnType(), IllegalAccessException.class);
+  private static MethodHandle willThrowAnException(Executable method, Exception e) {
+    Class<?> returnType = (method instanceof Method)? ((Method)method).getReturnType(): ((Constructor<?>)method).getDeclaringClass();
+    MethodHandle mh = MethodHandles.throwException(returnType, IllegalAccessException.class);
     mh = mh.bindTo(e);
     return MethodHandles.dropArguments(mh, 0,
         MethodType.genericMethodType(1 + method.getParameterCount()).parameterList());
@@ -362,63 +382,63 @@ final class JavaBridge {
           if (method.isDefault() || method.getDeclaringClass() == Object.class) {
             return method.invoke(proxy, args);
           }
-          Object[] arguments = new Object[1 + args.length];
-          arguments[0] = proxy;
-          System.arraycopy(args, 0, arguments, 1, args.length);
+          Object[] arguments;
+          if (args == null) {
+            arguments = new Object[] { proxy };
+          } else {
+            arguments = new Object[1 + args.length];
+            arguments[0] = proxy;
+            System.arraycopy(args, 0, arguments, 1, args.length);
+          }
           return function.getTarget().invokeWithArguments(arguments);
         });
   }
-
-  private static void gatherMethods(Class<?> type, boolean gatherStatic, HashMap<String, ArrayList<Method>[]> map) {
-    for(Method method: type.getMethods()) {
-      if (method.getDeclaringClass() == Object.class) {
-        continue;  // skip java.lang.Object's methods, objects have no identity
+  
+  private static void gatherMethods(Stream<Executable> executables, HashMap<String, ArrayList<Executable>[]> map) {
+    executables.forEach(executable -> {
+      if (executable.getDeclaringClass() == Object.class) {
+        return;  // skip java.lang.Object's methods, objects have no identity
       }
       
       String name;
-      MethodInfo methodInfo = method.getAnnotation(MethodInfo.class);
+      MethodInfo methodInfo = executable.getAnnotation(MethodInfo.class);
       if (methodInfo != null) {
         if (methodInfo.hidden()) {
-          continue;
+          return;   // skip methods marked as hidden
         }
         name = methodInfo.name();
       } else {
-        name = method.getName();
+        name = (executable instanceof Method)? executable.getName(): "@init";
       }
       
-      boolean isStatic = Modifier.isStatic(method.getModifiers());
-      if (isStatic != gatherStatic) {
-        continue;  // skip static or instance method
-      }
-      
-      int count = method.getParameterCount();
-      ArrayList<Method>[] methodByArity = map.get(name);
+      int count = executable.getParameterCount();
+      ArrayList<Executable>[] methodByArity = map.get(name);
       if (methodByArity == null) {
         @SuppressWarnings("unchecked")
-        ArrayList<Method>[] freshMethodByArity =
-            (ArrayList<Method>[]) new ArrayList<?>[1 + count];
-        ArrayList<Method> list = new ArrayList<>();
-        list.add(method);
+        ArrayList<Executable>[] freshMethodByArity =
+            (ArrayList<Executable>[]) new ArrayList<?>[1 + count];
+        ArrayList<Executable> list = new ArrayList<>();
+        list.add(executable);
         freshMethodByArity[count] = list;
         map.put(name, freshMethodByArity);
-        continue;
+        return;
       }
       if (methodByArity.length <= count) {
         methodByArity = Arrays.copyOf(methodByArity, 1 + count);
-        ArrayList<Method> list = new ArrayList<>();
-        list.add(method);
+        ArrayList<Executable> list = new ArrayList<>();
+        list.add(executable);
         methodByArity[count] = list;
         map.put(name, methodByArity);
-        continue;
+        return;
       }
-      ArrayList<Method> list = methodByArity[count];
+      ArrayList<Executable> list = methodByArity[count];
       if (list == null) {
         list = new ArrayList<>();
-        list.add(method);
+        list.add(executable);
         methodByArity[count] = list;
-        continue;
+        return;
       }
-      list.add(method);
-    }
+      list.add(executable);
+    });
   }
 }

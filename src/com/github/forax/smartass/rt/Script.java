@@ -267,7 +267,7 @@ public final class Script {
     Object constant = script.resolveKlass(symbol);
     if (constant == null) {
       if (!name.equals("symbolOrString")) {
-        throw new LinkageError("unknown symbol or local variable " + symbol);
+        throw new BootstrapMethodError("unknown local variable " + symbol);
       }
       constant = symbol;
     }
@@ -478,14 +478,6 @@ public final class Script {
     return new SmartMap(map);
   }
   
-  @MethodInfo(hidden=true)
-  public Object eval(Lambda lambda) throws Throwable {
-    Objects.requireNonNull(lambda);
-    Function main = Function.createFromLambda(this, Collections.emptyList(), Collections.emptyList(), lambda);
-    main.setNameHint("main");
-    return main.getTarget().invokeExact((Object)this);
-  }
-  
   // ---------------------------
   // public API !
   // ---------------------------
@@ -540,6 +532,19 @@ public final class Script {
     return klass;
   }
   
+  public Object eval(Lambda lambda, String name, Object... arguments) throws Throwable {
+    Objects.requireNonNull(lambda);
+    Function main = Function.createFromLambda(this,
+        Collections.emptyList(),
+        lambda.getParameters().stream().map(Parameter::getName).collect(Collectors.toList()),
+        lambda);
+    main.setNameHint(name);
+    Object[] args = new Object[1 + arguments.length];
+    args[0] = this;
+    System.arraycopy(arguments, 0, args, 1, arguments.length);
+    return main.getTarget().invokeWithArguments(args);
+  }
+  
   public Function fieldAccessor(String name) {
     Objects.requireNonNull(name);
     return Function.createFromMH(Collections.emptyList(),
@@ -564,6 +569,6 @@ public final class Script {
     try(Reader reader = Files.newBufferedReader(path)) {
       lambda = ASTBuilder.parseScript(reader, path);
     }
-    return eval(lambda);
+    return eval(lambda, "main");
   }
 }
