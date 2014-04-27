@@ -59,6 +59,14 @@ FAQ
    print(1 + 2)
    ```
    
+ * How to launch the REPL ?
+ 
+   The REPL is a smartass script named samples/repl.sms, so
+   it can be launch that way
+   ```
+   java -jar smartass.jar samples/repl.sms
+   ```  
+   
  * Where is formal grammar of SmartAss ?
  
    The [executable grammar](/grammar/smartass.ebnf) is defined
