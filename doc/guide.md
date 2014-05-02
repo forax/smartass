@@ -117,7 +117,7 @@ SmartAss Reference Guide
    By example, the following code represent an anonymous function
    (usually called a lambda) that prints its first argument
    ```
-   p = (x: print(x))
+   p = \(x: print(x))
    p(hello)
    ```
    
@@ -125,7 +125,7 @@ SmartAss Reference Guide
    so by example the local variable 'script' can be used inside the lambda body.  
    ```
    script = this
-   p = (x: script.print(x))
+   p = \(x: script.print(x))
    p("hello")
    ```
    The first line may be weird, a simple explanation is that 'this' represent
@@ -137,7 +137,7 @@ SmartAss Reference Guide
    By example
    ```
    x = 3
-   l = (: x = 4)
+   l = \(: x = 4)
    print(x)  // prints 3 
    ```
    
@@ -154,7 +154,7 @@ SmartAss Reference Guide
    
    the call to def use a shortcut syntax for this call
    ```
-   def('bestValue, (:
+   def('bestValue, \(:
      42
    ))
    ```
@@ -169,7 +169,7 @@ SmartAss Reference Guide
    
    so when writing the code above, the interpreter understands this code
    ```
-   script.def('bestValue, (:
+   script.def('bestValue, \(:
      42
    ))
    script.print(script.bestValue())    // print 42
