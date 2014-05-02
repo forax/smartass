@@ -65,7 +65,7 @@ class('Color, {double 'r, double 'g, double 'b}:
     )
 
     def('toDrawingColor:
-      legalize = (d: if(d > 1.0: 1.0 : d))
+      legalize = \(d: if(d > 1.0: 1.0 : d))
       Color(
         Math.floor(legalize(@r) * 255),
         Math.floor(legalize(@g) * 255),
@@ -163,23 +163,23 @@ class('Plane, {Vector 'norm, double 'offset, Surface 'surface}:
 
 class('_Surfaces:
     shiny = Surface(
-      (Vector pos: WHITE),        // diffuse
-      (Vector pos: GREY),         // specular
-      (Vector pos: 0.7),          // reflect
+      \(Vector pos: WHITE),       // diffuse
+      \(Vector pos: GREY),        // specular
+      \(Vector pos: 0.7),         // reflect
       250.0                       // roughness
       )
     def('shiny: shiny)
 
     checkerboard = Surface(
-        (Vector pos:              // diffuse
+        \(Vector pos:              // diffuse
             if((Math.floor(pos.z) + Math.floor(pos.x)) % 2.0 != 0.0:
               WHITE
             :
               BLACK
             )
         ),
-        (Vector pos: WHITE),      // specular
-        (Vector pos:              // reflect
+        \(Vector pos: WHITE),     // specular
+        \(Vector pos:              // reflect
             if((Math.floor(pos.z) + Math.floor(pos.x)) % 2.0 != 0.0:
                 0.1
             :
@@ -195,7 +195,7 @@ Surfaces = _Surfaces()
 class('RayTracer:
     MAX_DEPTH = 5;
 
-    intersections = (Ray ray, Scene scene:
+    intersections = \(Ray ray, Scene scene:
       closest = 'java.lang.Double .POSITIVE_INFINITY
       closestInter = null
       things = scene.things
@@ -213,17 +213,17 @@ class('RayTracer:
       closestInter
     )
 
-    testRay = (Ray ray, Scene scene:
+    testRay = \(Ray ray, Scene scene:
       isect = intersections(ray, scene);
       if(null != isect: isect.dist)
     )
     
-    getReflectionColor = (thing, Vector pos, Vector normal, Vector rd, Scene scene, int depth:
+    getReflectionColor = \(thing, Vector pos, Vector normal, Vector rd, Scene scene, int depth:
       traceRay(Ray(pos, rd), scene, depth + 1).scale(thing.surface.reflect()(pos))
     )
-
-    getNaturalColor = (thing, Vector position, Vector normal, Vector rd, Scene scene:
-        addLight = (Color col, Light light:
+    
+    getNaturalColor = \(thing, Vector position, Vector normal, Vector rd, Scene scene:
+        addLight = \(Color col, Light light:
             ldis = light.pos - position
             livec = ldis.norm()
             neatIsect = testRay(Ray(position, livec), scene)
@@ -240,10 +240,10 @@ class('RayTracer:
               col + lcolor * thing.surface.diffuse(position) + scolor * thing.surface.specular(position)
             )
         )
-        scene.lights.stream.reduce(DEFAULT_COLOR, addLight, (u, v: throw "boom"))
+        scene.lights.stream.reduce(DEFAULT_COLOR, addLight, \(u, v: throw "error"))
     )
 
-    shade = (Intersection isect, Scene scene, int depth:
+    shade = \(Intersection isect, Scene scene, int depth:
         d = isect.ray.dir;
         pos = d * isect.dist + isect.ray.start
         normal = isect.thing.normal(pos)
@@ -261,9 +261,9 @@ class('RayTracer:
     def('render |Scene scene, ctx, int screenWidth, int screenHeight:
         width = screenWidth.doubleValue
         height = screenHeight.doubleValue
-        getPoint = (double x, double y, _Camera camera:
-            recenterX = (x: (x - (width / 2.0)) / 2.0 / width)
-            recenterY = (y: -(y - (height / 2.0)) / 2.0 / height)
+        getPoint = \(double x, double y, _Camera camera:
+            recenterX = \(x: (x - (width / 2.0)) / 2.0 / width)
+            recenterY = \(y: -(y - (height / 2.0)) / 2.0 / height)
             (camera.forward + camera.right * recenterX(x)  + camera.up * recenterY(y)).norm()
         )
         y = 0;

@@ -1,9 +1,12 @@
-'com.github.forax.smartass.rt.Script .def('foo | x:
+require("samples/core.sms")
+
+def('foo | x:
   y = x
-  lambda1 = (x: 
-    z = (x: y)
+  lambda1 = \(x: 
+    z = \(x: y)
     z(x)
   )(x)
 )
 
-foo(3)
+print(foo(3))
+

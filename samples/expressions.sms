@@ -1,12 +1,12 @@
 require("samples/core.sms")
 
-result = (:
+result = \(:
   2
   + 3
 )()
 print(result)
 
-result2 = (:
+result2 = \(:
   2 +
   3
 )()

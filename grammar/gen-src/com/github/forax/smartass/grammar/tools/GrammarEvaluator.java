@@ -157,14 +157,9 @@ public interface GrammarEvaluator {
   public Expr expr_field_access(Token<String> id);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_block.
-   *  <code>expr ::= lpar colon block rpar</code>
+   *  <code>expr ::= aslash lpar parameter_star_4 colon block rpar</code>
    */
-  public Expr expr_block(int colon,List<Expr> block);
-  /** This methods is called after the reduction of the non terminal expr
-   *  by the grammar production expr_lambda.
-   *  <code>expr ::= lpar parameter_plus_4 colon block rpar</code>
-   */
-  public Expr expr_lambda(List<Parameter> parameter_plus,int colon,List<Expr> block);
+  public Expr expr_block(int aslash,List<Parameter> parameter_star,int colon,List<Expr> block);
   /** This methods is called after the reduction of the non terminal expr
    *  by the grammar production expr_funcall.
    *  <code>expr ::= expr lpar expr_star_5 block_param_optional_6 rpar</code>

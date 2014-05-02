@@ -36,7 +36,8 @@ tokens:
   ge = '>='                    [eq]
   dot = '\.'                   [dot]
   bang = '!' 
-  pipe = '\|'      
+  pipe = '\|' 
+  aslash = '\\'     
   at = '@'    
   sharp = '#'
   colon= ':'
@@ -74,6 +75,7 @@ types:
  'value': Token<String>
  'lopt': int
  'lcurl': int
+ 'aslash': int
  'pipe': int
  'colon': int
  
@@ -143,8 +145,8 @@ productions:
       | 'id' '=' expr                          [assign]       { expr_var_assignment }
       
       | '@' 'id'                                              { expr_field_access }
-      | '(' ':' block ')'                                     { expr_block }
-      | '(' parameter/'comma'+ ':' block ')'                  { expr_lambda }
+//      | 'aslash' parameter/'comma'* ':' expr   [lambda]       { expr_lambda }
+      | 'aslash' '(' parameter/'comma'* ':' block ')'         { expr_block }
       
       | expr '(' expr/'comma'* block_param? ')'               { expr_funcall }
       | expr '.' selector '(' expr/'comma'* block_param? ')'  { expr_mthcall }

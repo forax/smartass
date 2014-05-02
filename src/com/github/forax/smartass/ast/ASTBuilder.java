@@ -57,6 +57,10 @@ public class ASTBuilder implements GrammarEvaluator {
     }
     
     @Override
+    public int aslash(CharSequence data) {
+      return getLineNumber();
+    }
+    @Override
     public int pipe(CharSequence data) {
       return getLineNumber(); 
     }
@@ -243,18 +247,7 @@ public class ASTBuilder implements GrammarEvaluator {
     return new FieldAccess(id.getValue(), id.getLineNumber());
   }
   
-  @Override
-  public Expr expr_block(int colon, List<Expr> block) {
-    return block_param_block(colon, block);
-  }
-  @Override
-  public Expr expr_lambda(List<Parameter> parameter_plus, int colon, List<Expr> block) {
-    return block_param_lambda(parameter_plus.get(0).getLineNumber(), parameter_plus, colon, block); 
-  }
-  @Override
-  public Lambda block_param_block(int colon, List<Expr> block) {
-    return new Lambda(Collections.emptyList(), new Block(block, colon), path, colon);
-  }
+  
   @Override
   public Parameter parameter_id(Token<String> id) {
     return new Parameter(id.getValue(), null, id.getLineNumber());
@@ -266,6 +259,18 @@ public class ASTBuilder implements GrammarEvaluator {
   @Override
   public Parameter parameter_hint_quote_id(Token<String> text, Token<String> id) {
     return new Parameter(id.getValue(), text.getValue().substring(1), text.getLineNumber());
+  }
+  /*@Override
+  public Expr expr_lambda(int aslash, List<Parameter> parameters, int colon, Expr expr) {
+    return block_param_lambda(aslash, parameters, colon, Arrays.asList(expr));
+  }*/
+  @Override
+  public Expr expr_block(int aslash, List<Parameter> parameters, int colon, List<Expr> block) {
+    return block_param_lambda(aslash, parameters, colon, block); 
+  }
+  @Override
+  public Lambda block_param_block(int colon, List<Expr> block) {
+    return block_param_lambda(colon, Collections.emptyList(), colon, block);
   }
   @Override
   public Lambda block_param_lambda(int pipe, List<Parameter> parameter_star, int colon, List<Expr> block) {

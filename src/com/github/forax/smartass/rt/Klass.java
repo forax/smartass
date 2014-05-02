@@ -117,11 +117,6 @@ public final class Klass {
     return body;
   }
   
-  @Override
-  public String toString() {
-    return "klass " + name;
-  }
-  
   public String getName() {
     return name;
   }

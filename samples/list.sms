@@ -26,5 +26,5 @@ nil = Nil()
 cons = Cons
 
 list = cons(1, cons(2, cons(3, nil)))
-print("size: " + list.size.str)
-list.filter((element: element != 2)).str
+print("size: " + list.size)
+print(list.filter(|element: element != 2).str)

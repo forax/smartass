@@ -122,6 +122,12 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                                       stack.push_int(pipe);
                                  return;
            }
+                 case aslash: {
+         data=dataViewer.view(buffer);
+                                  int aslash=terminalEvaluator.aslash(data);
+                                      stack.push_int(aslash);
+                                 return;
+           }
                  case at: {
                        return;
            }
@@ -475,14 +481,7 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                       
           }
           return;
-                    case expr_block: { // not synthetic
-                                 List<Expr> block=(List<Expr>)stack.pop_Object();
-                                          int colon=stack.pop_int();
-                                                stack.push_Object(grammarEvaluator.expr_block(colon,block));
-                      
-          }
-          return;
-                    case parameter_plus_4_element: { // STAR_SINGLETON
+                    case parameter_star_4_element: { // STAR_SINGLETON
                              java.util.ArrayList<Parameter> list=
                      new java.util.ArrayList<Parameter>();
                    list.add((Parameter)stack.pop_Object());
@@ -490,20 +489,30 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                     
           }
           return;
-                    case parameter_plus_4_rec: { // STAR_RECURSIVE_LEFT
+                    case parameter_star_4_rec: { // STAR_RECURSIVE_LEFT
                             
                     Parameter parameter=(Parameter)stack.pop_Object();
-                    List<Parameter> parameter_plus_4=(List<Parameter>)stack.pop_Object();
-                     parameter_plus_4.add(parameter);
-                     stack.push_Object(parameter_plus_4);
+                    List<Parameter> parameter_star_4_sub=(List<Parameter>)stack.pop_Object();
+                     parameter_star_4_sub.add(parameter);
+                     stack.push_Object(parameter_star_4_sub);
                        
           }
           return;
-                    case expr_lambda: { // not synthetic
+                    case parameter_star_4_empty: { // STAR_EMPTY
+                            stack.push_Object(new java.util.ArrayList<Object>());
+                  
+          }
+          return;
+                    case parameter_star_4_through: { // STAR_PASS_THROUGH
+            
+          }
+          return;
+                    case expr_block: { // not synthetic
                                  List<Expr> block=(List<Expr>)stack.pop_Object();
                                           int colon=stack.pop_int();
-                                          List<Parameter> parameter_plus_4=(List<Parameter>)stack.pop_Object();
-                                                stack.push_Object(grammarEvaluator.expr_lambda(parameter_plus_4,colon,block));
+                                          List<Parameter> parameter_star_4=(List<Parameter>)stack.pop_Object();
+                                          int aslash=stack.pop_int();
+                                                stack.push_Object(grammarEvaluator.expr_block(aslash,parameter_star_4,colon,block));
                       
           }
           return;
@@ -851,6 +860,9 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                          case pipe:
               stack.pop_int();
               return;
+                         case aslash:
+              stack.pop_int();
+              return;
                          case at:
               
               return;
@@ -970,7 +982,10 @@ public class AnalyzerProcessor<B extends LexerBuffer,D>
                          case parameter_star_3_sub:
               stack.pop_Object();
               return;
-                         case parameter_plus_4:
+                         case parameter_star_4:
+              stack.pop_Object();
+              return;
+                         case parameter_star_4_sub:
               stack.pop_Object();
               return;
                          case expr_star_5:

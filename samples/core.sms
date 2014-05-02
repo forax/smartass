@@ -16,12 +16,12 @@ class('com.github.forax.smartass.rt.Script, {}:
   )
 )
 
-equals_mixin = (:
+equals_mixin = \(:
   def('== | other: this.equals(other))
   def('!= | other: !(this == other))
 )
 
-compare_mixin = (:
+compare_mixin = \(:
   def('< | other: 'java.lang.Integer .signum(compareTo(other)) == -1)
   def('<= | other: 'java.lang.Integer .signum(compareTo(other)) != 1)
   def('> | other: 'java.lang.Integer .signum(compareTo(other)) == 1)
@@ -104,7 +104,7 @@ class('java.lang.String:
   compare_mixin()
 
   def('+ | other:
-    concat(other)
+    concat(other.str)
   )
   def('str:
     this

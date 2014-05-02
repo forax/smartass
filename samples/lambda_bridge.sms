@@ -1,6 +1,6 @@
 require("samples/core.sms")
 
 script = this;
-fun = (x, y:)
+fun = \(x, y:)
 parameters = fun.getParameters()
 parameters.forEach(| l: script.print(l))

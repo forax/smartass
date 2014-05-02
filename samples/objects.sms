@@ -1,0 +1,32 @@
+require("samples/core.sms")
+
+script = this
+
+animal_mixin = \:
+  def('move | meters:
+    script.print(@name + " moved " + meters.toString + "m.");
+  )
+
+class('Snake, { 'name }:
+  animal_mixin()
+  
+  def('move:
+    script.print("Slithering...");
+    move(5);
+  )
+)
+
+class('Horse, { 'name }:
+  animal_mixin()
+  
+  def('move:
+    script.print("Galloping...");
+    move(45);
+  )
+)
+
+sam = Snake("Sammy the Python");
+tom = Horse("Tommy the Palomino");
+
+sam.move();
+tom.move(34);

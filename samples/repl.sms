@@ -1,7 +1,7 @@
 require("samples/core.sms")
 
 script = this
-printStackTrace = (cause:
+printStackTrace = \(cause:
   script.print("error " + cause.getMessage)
   stacktrace = cause.getStackTrace
   'java.util.Arrays .stream(stacktrace).filter(|element:
@@ -13,9 +13,9 @@ printStackTrace = (cause:
 )
 
 env = 'java.util.HashMap()
-consumer = (lambda:
+consumer = \(lambda:
   'com.github.forax.smartass.rt.Builtins .tryEval(
-    (:
+    \(:
       result = script.eval(lambda, "repl_eval", env)
       script.print(result)
     ), printStackTrace)
